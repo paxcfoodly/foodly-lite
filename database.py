@@ -23,10 +23,16 @@ def verify_password(password: str, stored_hash: str) -> bool:
         return False
 
 import os
-_db_path = os.environ.get("DB_PATH", "./foodly.db")
-DATABASE_URL = f"sqlite:///{_db_path}"
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+_db_url = os.environ.get("DATABASE_URL", "sqlite:///./foodly.db")
+# Railway는 postgres:// 를 반환하지만 SQLAlchemy 2.x는 postgresql:// 요구
+if _db_url.startswith("postgres://"):
+    _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+
+_is_sqlite = _db_url.startswith("sqlite")
+_kwargs = {"check_same_thread": False} if _is_sqlite else {}
+
+engine = create_engine(_db_url, connect_args=_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -419,7 +425,9 @@ def ensure_admin(db):
 
 
 def migrate_db():
-    """기존 테이블에 신규 컬럼 추가 (SQLite ALTER TABLE)"""
+    """기존 SQLite DB에 신규 컬럼 추가 — PostgreSQL은 create_all로 처리되므로 스킵"""
+    if not _is_sqlite:
+        return
     migrations = [
         "ALTER TABLE materials ADD COLUMN material_code TEXT",
         "ALTER TABLE materials ADD COLUMN category TEXT",
