@@ -536,6 +536,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
     <div class="nav-item" id="nav-ledger" onclick="goApp('ledger')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>원료수불대장
     </div>
+    <div class="nav-item" id="nav-ingodaejang" onclick="goApp('ingodaejang')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>입고대장
+    </div>
     <div class="nav-section">생산</div>
     <div class="nav-item" id="nav-production" onclick="goApp('production')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>생산실적
@@ -806,6 +809,67 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
             <thead><tr><th>날짜</th><th>원료명</th><th>단위</th><th>구분</th><th>입고처/출처</th><th class="r">입고량</th><th class="r">출고량</th><th class="r">당일재고</th><th>비고</th></tr></thead>
             <tbody id="ledger-tbody"><tr><td colspan="9" style="text-align:center;padding:32px;color:var(--gray-md)">조회 기간을 선택하고 조회하세요</td></tr></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 입고대장 ── -->
+    <div id="app-ingodaejang" class="hidden">
+      <div class="page-head">
+        <div><div class="page-title">입고대장</div><div class="page-sub">원료별 입고검사 이력 · 출력</div></div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="printIngodaejang()">PDF 출력</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="fbar" style="background:var(--white);border:1px solid var(--gray-bd);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px">
+          <select id="ingoda-material-sel" class="finput" style="width:200px" onchange="loadIngodaejang()"><option value="">원료 선택</option></select>
+          <input id="ingoda-date-from" type="date" class="finput" style="width:140px" onchange="loadIngodaejang()"/>
+          <span style="color:var(--gray-md)">~</span>
+          <input id="ingoda-date-to" type="date" class="finput" style="width:140px" onchange="loadIngodaejang()"/>
+          <button class="btn btn-primary btn-sm" onclick="loadIngodaejang()">조회</button>
+        </div>
+        <div id="ingoda-print-area">
+          <div id="ingoda-empty" style="text-align:center;padding:48px;color:var(--gray-md)">원료를 선택하고 조회하세요</div>
+          <div id="ingoda-content" style="display:none">
+            <div style="background:var(--white);border:1px solid var(--gray-bd);border-radius:var(--radius);padding:24px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+                <h2 style="font-size:20px;font-weight:800;margin:0">입고대장</h2>
+                <div style="border:1px solid #333;padding:6px 20px;font-size:13px;font-weight:600">원료명: <span id="ingoda-matname"></span></div>
+              </div>
+              <table id="ingoda-table" style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px">
+                <colgroup>
+                  <col style="width:70px"/><col style="width:100px"/><col style="width:90px"/>
+                  <col style="width:80px"/><col style="width:90px"/><col style="width:90px"/>
+                  <col style="width:60px"/><col style="width:60px"/>
+                </colgroup>
+                <thead>
+                  <tr style="background:#f5f5f5">
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">입고일</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">구매처/제조원</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">포장상태</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">소비기한</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">육안검사</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">판정</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">담당</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">확인</th>
+                  </tr>
+                </thead>
+                <tbody id="ingoda-tbody"></tbody>
+              </table>
+              <div style="font-size:12px;font-weight:700;margin-bottom:6px">부적합내역 및 조치사항</div>
+              <table id="ingoda-nc-table" style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead>
+                  <tr style="background:#f5f5f5">
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center;width:70px">월/일</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">부적합내역 및 조치사항</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center;width:60px">담당</th>
+                  </tr>
+                </thead>
+                <tbody id="ingoda-nc-tbody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1230,6 +1294,32 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
           </div>
           <div class="fl"><div class="fl-lbl">로트번호</div><input id="form-lot-number" class="finput" placeholder="LOT 번호 입력"/></div>
         </div></div>
+        <div class="card"><div class="card-head"><div class="card-title">입고검사</div></div><div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+          <div class="frow">
+            <div class="fl"><div class="fl-lbl">포장상태</div>
+              <div style="display:flex;gap:16px;align-items:center;padding:8px 0">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="packaging_ok" value="true"/> 적합</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="packaging_ok" value="false"/> 부적합</label>
+              </div>
+            </div>
+            <div class="fl"><div class="fl-lbl">육안검사</div>
+              <div style="display:flex;gap:16px;align-items:center;padding:8px 0">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="visual_ok" value="true"/> 적합</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="visual_ok" value="false"/> 부적합</label>
+              </div>
+            </div>
+            <div class="fl"><div class="fl-lbl">판정</div>
+              <div style="display:flex;gap:16px;align-items:center;padding:8px 0">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="judgment_ok" value="true"/> 적합</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="judgment_ok" value="false"/> 부적합</label>
+              </div>
+            </div>
+          </div>
+          <div class="frow">
+            <div class="fl"><div class="fl-lbl">담당자</div><input id="form-inspector" class="finput" placeholder="담당자명"/></div>
+            <div class="fl"><div class="fl-lbl">확인자</div><input id="form-confirmer" class="finput" placeholder="확인자명"/></div>
+          </div>
+        </div></div>
       </div>
     </div>
 
@@ -1468,8 +1558,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 // ROUTING
 // ══════════════════════════════
 const allScreens = ['login','signup','onboard1','onboard2','onboard3','app','admin'];
-const allAppScreens = ['dashboard','receipt','receipt-upload','receipt-ocr','receipt-done','receipt-manual','stock','ledger','production','plan','recipe','device','mat-master','semi-master','prod-master','partner-master','process-master','shipment','sales-dashboard','sales-ledger','statement'];
-const navMap = {dashboard:'nav-dashboard',receipt:'nav-receipt','receipt-upload':'nav-receipt','receipt-ocr':'nav-receipt','receipt-done':'nav-receipt','receipt-manual':'nav-receipt',stock:'nav-stock',ledger:'nav-ledger',production:'nav-production',plan:'nav-plan',recipe:'nav-recipe',device:'nav-device','mat-master':'nav-mat-master','semi-master':'nav-semi-master','prod-master':'nav-prod-master','partner-master':'nav-partner-master','process-master':'nav-process-master',shipment:'nav-shipment','sales-dashboard':'nav-sales-dashboard','sales-ledger':'nav-sales-ledger',statement:'nav-statement'};
+const allAppScreens = ['dashboard','receipt','receipt-upload','receipt-ocr','receipt-done','receipt-manual','stock','ledger','ingodaejang','production','plan','recipe','device','mat-master','semi-master','prod-master','partner-master','process-master','shipment','sales-dashboard','sales-ledger','statement'];
+const navMap = {dashboard:'nav-dashboard',receipt:'nav-receipt','receipt-upload':'nav-receipt','receipt-ocr':'nav-receipt','receipt-done':'nav-receipt','receipt-manual':'nav-receipt',stock:'nav-stock',ledger:'nav-ledger',ingodaejang:'nav-ingodaejang',production:'nav-production',plan:'nav-plan',recipe:'nav-recipe',device:'nav-device','mat-master':'nav-mat-master','semi-master':'nav-semi-master','prod-master':'nav-prod-master','partner-master':'nav-partner-master','process-master':'nav-process-master',shipment:'nav-shipment','sales-dashboard':'nav-sales-dashboard','sales-ledger':'nav-sales-ledger',statement:'nav-statement'};
 
 function go(screen){
   allScreens.forEach(s=>{ const el=document.getElementById('screen-'+s); if(el) el.classList.add('hidden'); });
@@ -2210,6 +2300,85 @@ function ledgerPrint() {
   w.print();
 }
 
+// ══════════════════════════════════════════════════════
+// 입고대장
+// ══════════════════════════════════════════════════════
+async function initIngodaejang() {
+  const sel = document.getElementById('ingoda-material-sel');
+  if (!sel) return;
+  const mats = await apiFetch('/materials');
+  if (!mats) return;
+  sel.innerHTML = '<option value="">원료 선택</option>' +
+    mats.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  const today = new Date().toISOString().slice(0,10);
+  const firstDay = today.slice(0,7) + '-01';
+  document.getElementById('ingoda-date-from').value = firstDay;
+  document.getElementById('ingoda-date-to').value   = today;
+}
+
+async function loadIngodaejang() {
+  const matId = document.getElementById('ingoda-material-sel')?.value;
+  if (!matId) return;
+  const df = document.getElementById('ingoda-date-from')?.value || '';
+  const dt = document.getElementById('ingoda-date-to')?.value || '';
+  const params = new URLSearchParams({ material_id: matId });
+  if (df) params.set('date_from', df);
+  if (dt) params.set('date_to', dt);
+  const data = await apiFetch('/receipts/ingodaejang?' + params.toString());
+  if (!data) return;
+
+  document.getElementById('ingoda-empty').style.display = 'none';
+  document.getElementById('ingoda-content').style.display = '';
+  document.getElementById('ingoda-matname').textContent = data.material_name;
+
+  const chk = (v) => v === true ? '☑ 적합' : v === false ? '☑ 부적합' : '□ 적합<br>□ 부적합';
+
+  const tbody = document.getElementById('ingoda-tbody');
+  if (!data.rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999">해당 기간 입고 내역이 없습니다</td></tr>';
+  } else {
+    tbody.innerHTML = data.rows.map(r => `<tr>
+      <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.delivery_date}</td>
+      <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.supplier_name}</td>
+      <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.packaging_ok)}</td>
+      <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.expiry_date}</td>
+      <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.visual_ok)}</td>
+      <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.judgment_ok)}</td>
+      <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.inspector}</td>
+      <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.confirmer}</td>
+    </tr>`).join('');
+  }
+
+  const ncTbody = document.getElementById('ingoda-nc-tbody');
+  const emptyNcRows = Math.max(3, data.nonconformances.length + 1);
+  const ncRows = [...data.nonconformances.map(nc => `<tr>
+      <td style="border:1px solid #ccc;padding:5px;text-align:center">${nc.date}</td>
+      <td style="border:1px solid #ccc;padding:5px">${nc.content}</td>
+      <td style="border:1px solid #ccc;padding:5px;text-align:center">${nc.inspector}</td>
+    </tr>`),
+    ...Array(emptyNcRows - data.nonconformances.length).fill(
+      '<tr><td style="border:1px solid #ccc;padding:14px"></td><td style="border:1px solid #ccc;padding:14px"></td><td style="border:1px solid #ccc;padding:14px"></td></tr>'
+    )];
+  ncTbody.innerHTML = ncRows.join('');
+}
+
+function printIngodaejang() {
+  const area = document.getElementById('ingoda-print-area');
+  if (!area) return;
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>입고대장</title>
+    <style>
+      body{font-family:'Malgun Gothic',sans-serif;font-size:12px;margin:20px}
+      table{border-collapse:collapse;width:100%}
+      th,td{border:1px solid #333;padding:6px}
+      th{background:#f0f0f0;text-align:center}
+      h2{font-size:18px;font-weight:800}
+      @media print{body{margin:10mm}}
+    </style></head><body>${area.innerHTML}</body></html>`);
+  w.document.close();
+  w.print();
+}
+
 // ── 재고 조정
 function openAdjustModal(matId, matName, before, unit) {
   document.getElementById('adj-mat-name').textContent = matName;
@@ -2312,6 +2481,11 @@ async function submitReceipt() {
   const delivery_date = document.getElementById('form-delivery-date')?.value;
   const expiry_date   = document.getElementById('form-expiry-date')?.value;
   const lot_number    = document.getElementById('form-lot-number')?.value;
+  const packaging_ok_r = document.querySelector('input[name="packaging_ok"]:checked');
+  const visual_ok_r    = document.querySelector('input[name="visual_ok"]:checked');
+  const judgment_ok_r  = document.querySelector('input[name="judgment_ok"]:checked');
+  const inspector  = document.getElementById('form-inspector')?.value || null;
+  const confirmer  = document.getElementById('form-confirmer')?.value || null;
   if (!material_id || !quantity) { alert('원료와 수량은 필수입니다.'); return; }
 
   // 재고 이전값 기록 (완료 화면에 표시용)
@@ -2331,6 +2505,10 @@ async function submitReceipt() {
       expiry_date: expiry_date || null,
       lot_number: lot_number || null,
       input_method: 'manual',
+      packaging_ok: packaging_ok_r ? packaging_ok_r.value === 'true' : null,
+      visual_ok:    visual_ok_r    ? visual_ok_r.value === 'true'    : null,
+      judgment_ok:  judgment_ok_r  ? judgment_ok_r.value === 'true'  : null,
+      inspector, confirmer,
     }),
   });
   if (!result) return;
@@ -2756,6 +2934,7 @@ window.goApp = function(page) {
   else if (page === 'process-master') loadProcessMaster();
   else if (page === 'plan')         initPlanView();
   else if (page === 'ledger')       initLedger();
+  else if (page === 'ingodaejang')  initIngodaejang();
   else if (page === 'device')       loadDevices();
 };
 

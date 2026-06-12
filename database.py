@@ -281,9 +281,29 @@ class Receipt(Base):
     status = Column(String, default="confirmed")
     user_id = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)
+    # 입고검사 필드
+    packaging_ok = Column(Boolean, nullable=True)
+    visual_ok = Column(Boolean, nullable=True)
+    judgment_ok = Column(Boolean, nullable=True)
+    inspector = Column(String)
+    confirmer = Column(String)
 
     material = relationship("Material", back_populates="receipts")
     supplier = relationship("Supplier", back_populates="receipts")
+    nonconformances = relationship("ReceiptNonconformance", back_populates="receipt", cascade="all, delete-orphan")
+
+
+class ReceiptNonconformance(Base):
+    __tablename__ = "receipt_nonconformances"
+    id = Column(Integer, primary_key=True, index=True)
+    receipt_id = Column(Integer, ForeignKey("receipts.id"), nullable=False)
+    date = Column(String)
+    content = Column(String)
+    inspector = Column(String)
+    user_id = Column(Integer)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    receipt = relationship("Receipt", back_populates="nonconformances")
 
 
 class Device(Base):
@@ -468,6 +488,12 @@ def migrate_db():
         "ALTER TABLE stock_adjustments ADD COLUMN user_id INTEGER",
         "ALTER TABLE finished_products ADD COLUMN current_stock REAL DEFAULT 0",
         "ALTER TABLE tenant_users ADD COLUMN seal_image TEXT",
+        # 입고검사
+        "ALTER TABLE receipts ADD COLUMN packaging_ok INTEGER",
+        "ALTER TABLE receipts ADD COLUMN visual_ok INTEGER",
+        "ALTER TABLE receipts ADD COLUMN judgment_ok INTEGER",
+        "ALTER TABLE receipts ADD COLUMN inspector TEXT",
+        "ALTER TABLE receipts ADD COLUMN confirmer TEXT",
     ]
     with engine.connect() as conn:
         for sql in migrations:

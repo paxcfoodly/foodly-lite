@@ -38,7 +38,7 @@ from database import (
     SemiProduct, FinishedProduct, Process, ProductBOM,
     ProductProcess, MaterialSupplier, ProductionPlan,
     SalesLog, SemiProductBOM, SemiProductProcess, StockAdjustment,
-    Shipment,
+    Shipment, ReceiptNonconformance,
     TenantUser, UserSession, hash_password, verify_password, ensure_admin,
     SessionLocal,
 )
@@ -332,6 +332,17 @@ class ReceiptCreate(BaseModel):
     delivery_date: Optional[str] = None
     expiry_date: Optional[str] = None
     input_method: str = "manual"
+    packaging_ok: Optional[bool] = None
+    visual_ok: Optional[bool] = None
+    judgment_ok: Optional[bool] = None
+    inspector: Optional[str] = None
+    confirmer: Optional[str] = None
+
+class NonconformanceCreate(BaseModel):
+    receipt_id: int
+    date: Optional[str] = None
+    content: str
+    inspector: Optional[str] = None
 
 class ProductionCreate(BaseModel):
     lot_number: Optional[str] = None
@@ -599,6 +610,8 @@ def list_receipts(
             "delivery_date": r.delivery_date.strftime("%Y-%m-%d") if r.delivery_date else None,
             "expiry_date": r.expiry_date.strftime("%Y-%m-%d") if r.expiry_date else None,
             "input_method": r.input_method, "status": r.status,
+            "packaging_ok": r.packaging_ok, "visual_ok": r.visual_ok,
+            "judgment_ok": r.judgment_ok, "inspector": r.inspector, "confirmer": r.confirmer,
         })
     return result
 
@@ -623,6 +636,11 @@ def create_receipt(data: ReceiptCreate, db: Session = Depends(get_db)):
         input_method=data.input_method,
         status="confirmed",
         user_id=uid(),
+        packaging_ok=data.packaging_ok,
+        visual_ok=data.visual_ok,
+        judgment_ok=data.judgment_ok,
+        inspector=data.inspector,
+        confirmer=data.confirmer,
     )
     db.add(receipt)
     material.current_stock += data.quantity
@@ -630,6 +648,61 @@ def create_receipt(data: ReceiptCreate, db: Session = Depends(get_db)):
     db.refresh(receipt)
     return {"id": receipt.id, "receipt_number": receipt.receipt_number}
 
+
+@app.get("/api/receipts/ingodaejang")
+def get_ingodaejang(
+    material_id: int,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    material = db.query(Material).filter(Material.id == material_id, Material.user_id == uid()).first()
+    if not material:
+        raise HTTPException(404, "Material not found")
+    q = db.query(Receipt).filter(Receipt.material_id == material_id, Receipt.user_id == uid())
+    if date_from:
+        q = q.filter(Receipt.delivery_date >= datetime.fromisoformat(date_from))
+    if date_to:
+        q = q.filter(Receipt.delivery_date <= datetime.fromisoformat(date_to + "T23:59:59"))
+    rows = q.order_by(Receipt.delivery_date).all()
+    nc_all = db.query(ReceiptNonconformance).filter(
+        ReceiptNonconformance.user_id == uid(),
+        ReceiptNonconformance.receipt_id.in_([r.id for r in rows])
+    ).order_by(ReceiptNonconformance.date).all()
+    return {
+        "material_name": material.name,
+        "rows": [{
+            "id": r.id,
+            "delivery_date": r.delivery_date.strftime("%Y-%m-%d") if r.delivery_date else "",
+            "supplier_name": r.supplier.name if r.supplier else "",
+            "packaging_ok": r.packaging_ok,
+            "expiry_date": r.expiry_date.strftime("%Y-%m-%d") if r.expiry_date else "",
+            "visual_ok": r.visual_ok,
+            "judgment_ok": r.judgment_ok,
+            "inspector": r.inspector or "",
+            "confirmer": r.confirmer or "",
+        } for r in rows],
+        "nonconformances": [{
+            "date": nc.date or "",
+            "content": nc.content or "",
+            "inspector": nc.inspector or "",
+        } for nc in nc_all],
+    }
+
+@app.post("/api/receipts/nonconformance", status_code=201)
+def add_nonconformance(data: NonconformanceCreate, db: Session = Depends(get_db)):
+    r = db.query(Receipt).filter(Receipt.id == data.receipt_id, Receipt.user_id == uid()).first()
+    if not r:
+        raise HTTPException(404, "Receipt not found")
+    nc = ReceiptNonconformance(
+        receipt_id=data.receipt_id,
+        date=data.date,
+        content=data.content,
+        inspector=data.inspector,
+        user_id=uid(),
+    )
+    db.add(nc); db.commit(); db.refresh(nc)
+    return {"id": nc.id}
 
 @app.delete("/api/receipts/{receipt_id}", status_code=200)
 def delete_receipt(receipt_id: int, db: Session = Depends(get_db)):
