@@ -2454,42 +2454,51 @@ async def import_excel(dtype: str, file: UploadFile = File(...), db: Session = D
     errors = []
 
     for i, row in enumerate(rows, start=2):
-        if not row or all(v is None for v in row):
+        if not row or all(cell is None for cell in row):
             continue
-        def v(idx): return str(row[idx]).strip() if row[idx] is not None else ""
-        def n(idx):
+        def cv(idx): return str(row[idx]).strip() if row[idx] is not None else ""
+        def cn(idx):
             try: return float(row[idx]) if row[idx] is not None else None
             except: return None
 
         try:
             if dtype == "material":
-                if not v(0): errors.append(f"{i}행: 품목명 누락"); continue
-                db.add(Material(name=v(0), material_code=v(1) or None, category=v(2) or None,
-                    unit=v(3) or "kg", safety_stock=n(4) or 0, unit_price=n(5),
-                    description=v(6) or None, status="active", user_id=uid()))
+                if not cv(0): errors.append(f"{i}행: 품목명 누락"); continue
+                obj = Material(name=cv(0), material_code=cv(1) or None, category=cv(2) or None,
+                    unit=cv(3) or "kg", safety_stock=cn(4) or 0, unit_price=cn(5),
+                    description=cv(6) or None, status="active", user_id=uid())
             elif dtype == "semi":
-                if not v(0): errors.append(f"{i}행: 품목명 누락"); continue
-                db.add(SemiProduct(name=v(0), code=v(1) or None, category=v(2) or None,
-                    unit=v(3) or "kg", standard_qty=n(4), unit_price=n(5),
-                    description=v(6) or None, status="active", user_id=uid()))
+                if not cv(0): errors.append(f"{i}행: 품목명 누락"); continue
+                obj = SemiProduct(name=cv(0), code=cv(1) or None, category=cv(2) or None,
+                    unit=cv(3) or "kg", standard_qty=cn(4), unit_price=cn(5),
+                    description=cv(6) or None, status="active", user_id=uid())
             elif dtype == "product":
-                if not v(0): errors.append(f"{i}행: 제품명 누락"); continue
-                db.add(FinishedProduct(name=v(0), code=v(1) or None, category=v(2) or None,
-                    unit=v(3) or "ea", unit_price=n(4),
-                    description=v(5) or None, status="active", user_id=uid()))
+                if not cv(0): errors.append(f"{i}행: 제품명 누락"); continue
+                obj = FinishedProduct(name=cv(0), code=cv(1) or None, category=cv(2) or None,
+                    unit=cv(3) or "ea", unit_price=cn(4),
+                    description=cv(5) or None, status="active", user_id=uid())
             elif dtype == "partner":
-                if not v(0): errors.append(f"{i}행: 업체명 누락"); continue
-                ptype = v(2) if v(2) in ("supplier","customer","other") else "supplier"
-                db.add(Supplier(name=v(0), business_number=v(1) or None, partner_type=ptype,
-                    contact_person=v(3) or None, contact=v(4) or None, email=v(5) or None,
-                    address=v(6) or None, main_products=v(7) or None, status="active", user_id=uid()))
+                if not cv(0): errors.append(f"{i}행: 업체명 누락"); continue
+                ptype = cv(2) if cv(2) in ("supplier","customer","other") else "supplier"
+                obj = Supplier(name=cv(0), business_number=cv(1) or None, partner_type=ptype,
+                    contact_person=cv(3) or None, contact=cv(4) or None, email=cv(5) or None,
+                    address=cv(6) or None, main_products=cv(7) or None, status="active", user_id=uid())
             elif dtype == "process":
-                if not v(0): errors.append(f"{i}행: 공정명 누락"); continue
-                db.add(Process(name=v(0), code=v(1) or None, description=v(2) or None,
-                    status="active", user_id=uid()))
+                if not cv(0): errors.append(f"{i}행: 공정명 누락"); continue
+                obj = Process(name=cv(0), code=cv(1) or None, description=cv(2) or None,
+                    status="active", user_id=uid())
+            else:
+                continue
+            db.add(obj)
+            db.flush()  # 행별로 즉시 반영해서 오류를 여기서 잡음
             created += 1
         except Exception as e:
-            errors.append(f"{i}행 오류: {str(e)}")
+            db.rollback()
+            msg = str(e).split('\n')[0]
+            if "UNIQUE" in msg or "unique" in msg:
+                errors.append(f"{i}행: 코드 또는 이름이 중복됩니다 ({cv(0)})")
+            else:
+                errors.append(f"{i}행 오류: {msg}")
 
     db.commit()
     return {"created": created, "errors": errors}
