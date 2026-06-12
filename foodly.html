@@ -1328,6 +1328,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="page-head">
         <div><div class="page-title">원재료 관리</div><div class="page-sub">원재료 마스터 등록 · 수정 · 관리</div></div>
         <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="downloadExcelTemplate('material')">엑셀 양식 다운로드</button>
+          <button class="btn btn-ghost btn-sm" onclick="openExcelImport('material','원재료')">엑셀 업로드</button>
           <button class="btn btn-primary" onclick="openMasterModal('material',null)">+ 원재료 등록</button>
         </div>
       </div>
@@ -1363,6 +1365,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="page-head">
         <div><div class="page-title">반제품 관리</div><div class="page-sub">반제품 마스터 등록 · 수정 · 관리</div></div>
         <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="downloadExcelTemplate('semi')">엑셀 양식 다운로드</button>
+          <button class="btn btn-ghost btn-sm" onclick="openExcelImport('semi','반제품')">엑셀 업로드</button>
           <button class="btn btn-primary" onclick="openMasterModal('semi',null)">+ 반제품 등록</button>
         </div>
       </div>
@@ -1392,6 +1396,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="page-head">
         <div><div class="page-title">제품 관리</div><div class="page-sub">완제품 마스터 등록 · 수정 · 관리</div></div>
         <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="downloadExcelTemplate('product')">엑셀 양식 다운로드</button>
+          <button class="btn btn-ghost btn-sm" onclick="openExcelImport('product','제품')">엑셀 업로드</button>
           <button class="btn btn-primary" onclick="openMasterModal('product',null)">+ 제품 등록</button>
         </div>
       </div>
@@ -1426,6 +1432,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="page-head">
         <div><div class="page-title">거래처 관리</div><div class="page-sub">공급업체 · 고객사 마스터 등록 · 수정 · 관리</div></div>
         <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="downloadExcelTemplate('partner')">엑셀 양식 다운로드</button>
+          <button class="btn btn-ghost btn-sm" onclick="openExcelImport('partner','거래처')">엑셀 업로드</button>
           <button class="btn btn-primary" onclick="openMasterModal('partner',null)">+ 거래처 등록</button>
         </div>
       </div>
@@ -1462,6 +1470,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="page-head">
         <div><div class="page-title">공정 관리</div><div class="page-sub">제조 공정 마스터 등록 · 수정 · 관리</div></div>
         <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="downloadExcelTemplate('process')">엑셀 양식 다운로드</button>
+          <button class="btn btn-ghost btn-sm" onclick="openExcelImport('process','공정')">엑셀 업로드</button>
           <button class="btn btn-primary" onclick="openMasterModal('process',null)">+ 공정 등록</button>
         </div>
       </div>
@@ -1536,6 +1546,36 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
     </div>
 
     <!-- 재고조정 이력 모달 -->
+    <!-- 엑셀 업로드 모달 -->
+    <div id="excel-import-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1002;display:flex;align-items:center;justify-content:center">
+      <div style="background:#fff;border-radius:14px;padding:28px 32px;width:480px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div style="font-size:17px;font-weight:700" id="excel-modal-title">엑셀 업로드</div>
+          <button onclick="document.getElementById('excel-import-modal').classList.add('hidden')" style="border:none;background:transparent;font-size:22px;cursor:pointer;color:var(--gray)">×</button>
+        </div>
+        <div style="background:#f0fff8;border:1px solid #b2dfdb;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#1B7A5E">
+          💡 먼저 <b>엑셀 양식 다운로드</b>를 받아 작성한 후 업로드하세요.<br>
+          2행의 예시 데이터는 삭제 후 입력하세요.
+        </div>
+        <div id="excel-drop-zone" style="border:2px dashed var(--gray-bd);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:16px"
+          onclick="document.getElementById('excel-file-input').click()"
+          ondragover="event.preventDefault();this.style.borderColor='var(--teal)'"
+          ondragleave="this.style.borderColor='var(--gray-bd)'"
+          ondrop="handleExcelDrop(event)">
+          <div style="font-size:32px;margin-bottom:8px">📂</div>
+          <div style="font-size:14px;color:var(--gray)">클릭하거나 파일을 여기에 끌어다 놓으세요</div>
+          <div style="font-size:12px;color:var(--gray-md);margin-top:4px">.xlsx 파일</div>
+          <div id="excel-file-name" style="margin-top:10px;font-size:13px;color:var(--teal);font-weight:600"></div>
+        </div>
+        <input type="file" id="excel-file-input" accept=".xlsx" style="display:none" onchange="onExcelFileSelect(this)"/>
+        <div id="excel-import-result" style="display:none;margin-bottom:14px;font-size:13px;border-radius:8px;padding:10px 14px"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="document.getElementById('excel-import-modal').classList.add('hidden')">닫기</button>
+          <button class="btn btn-primary" id="excel-upload-btn" onclick="submitExcelImport()" disabled style="opacity:.5">업로드</button>
+        </div>
+      </div>
+    </div>
+
     <div id="adjust-history-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1001;display:flex;align-items:center;justify-content:center">
       <div style="background:#fff;border-radius:14px;padding:28px 32px;width:700px;max-width:95vw;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
@@ -2303,6 +2343,107 @@ function ledgerPrint() {
 // ══════════════════════════════════════════════════════
 // 입고대장
 // ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// 엑셀 양식 다운로드 / 업로드
+// ══════════════════════════════════════════════════════
+let _excelImportType = '';
+let _excelImportRefresh = null;
+let _excelFile = null;
+
+function downloadExcelTemplate(dtype) {
+  const token = localStorage.getItem('foodly_token') || '';
+  const a = document.createElement('a');
+  a.href = `/api/master/excel-template/${dtype}`;
+  a.download = '';
+  // Authorization via header not possible with <a>, so add token as query (middleware will check)
+  const form = document.createElement('form');
+  form.method = 'GET';
+  form.action = `/api/master/excel-template/${dtype}`;
+  const inp = document.createElement('input');
+  inp.type = 'hidden'; inp.name = 'token'; inp.value = token;
+  // Use fetch + blob download instead
+  fetch(`/api/master/excel-template/${dtype}`, { headers: { 'X-Token': token } })
+    .then(r => r.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const names = {material:'원재료', semi:'반제품', product:'제품', partner:'거래처', process:'공정'};
+      link.download = `${names[dtype]||dtype}_양식.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+}
+
+const _masterRefreshMap = {
+  material: () => loadMaterMaster(),
+  semi:     () => loadSemiMaster(),
+  product:  () => loadProductMaster(),
+  partner:  () => loadPartnerMaster(),
+  process:  () => loadProcessMaster(),
+};
+
+function openExcelImport(dtype, label) {
+  _excelImportType = dtype;
+  _excelFile = null;
+  _excelImportRefresh = _masterRefreshMap[dtype] || null;
+  document.getElementById('excel-modal-title').textContent = `${label} 엑셀 업로드`;
+  document.getElementById('excel-file-name').textContent = '';
+  document.getElementById('excel-import-result').style.display = 'none';
+  document.getElementById('excel-upload-btn').disabled = true;
+  document.getElementById('excel-upload-btn').style.opacity = '.5';
+  document.getElementById('excel-file-input').value = '';
+  document.getElementById('excel-import-modal').classList.remove('hidden');
+}
+
+function onExcelFileSelect(input) {
+  if (!input.files[0]) return;
+  _excelFile = input.files[0];
+  document.getElementById('excel-file-name').textContent = _excelFile.name;
+  document.getElementById('excel-upload-btn').disabled = false;
+  document.getElementById('excel-upload-btn').style.opacity = '1';
+}
+
+function handleExcelDrop(e) {
+  e.preventDefault();
+  document.getElementById('excel-drop-zone').style.borderColor = 'var(--gray-bd)';
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.name.endsWith('.xlsx')) { alert('.xlsx 파일만 업로드 가능합니다.'); return; }
+  _excelFile = file;
+  document.getElementById('excel-file-name').textContent = file.name;
+  document.getElementById('excel-upload-btn').disabled = false;
+  document.getElementById('excel-upload-btn').style.opacity = '1';
+}
+
+async function submitExcelImport() {
+  if (!_excelFile) return;
+  const btn = document.getElementById('excel-upload-btn');
+  btn.disabled = true; btn.textContent = '업로드 중...';
+  const formData = new FormData();
+  formData.append('file', _excelFile);
+  const token = localStorage.getItem('foodly_token') || '';
+  try {
+    const resp = await fetch(`/api/master/excel-import/${_excelImportType}`, {
+      method: 'POST', headers: { 'X-Token': token }, body: formData,
+    });
+    const data = await resp.json();
+    const res = document.getElementById('excel-import-result');
+    res.style.display = 'block';
+    if (resp.ok) {
+      res.style.background = '#f0fff8'; res.style.border = '1px solid #b2dfdb'; res.style.color = '#1B7A5E';
+      res.innerHTML = `✅ <b>${data.created}건</b> 등록 완료` +
+        (data.errors.length ? `<br><span style="color:#e53e3e">${data.errors.join('<br>')}</span>` : '');
+      if (_excelImportRefresh) _excelImportRefresh();
+    } else {
+      res.style.background = '#fff5f5'; res.style.border = '1px solid #fed7d7'; res.style.color = '#c53030';
+      res.textContent = '오류: ' + (data.detail || JSON.stringify(data));
+    }
+  } catch(e) {
+    alert('업로드 중 오류가 발생했습니다.');
+  }
+  btn.disabled = false; btn.textContent = '업로드';
+}
+
 async function initIngodaejang() {
   const sel = document.getElementById('ingoda-material-sel');
   if (!sel) return;

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, File, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
@@ -15,6 +15,10 @@ import os
 import base64
 import json
 import re
+import io
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from urllib.parse import quote
 
 # .env 파일 자동 로드 (패키지 불필요)
 def _load_dotenv():
@@ -2355,6 +2359,140 @@ def master_delete_process(pid: int, db: Session = Depends(get_db)):
     p.status = "inactive"
     db.commit()
     return {"ok": True}
+
+
+# ═══════════════════════════════════════════════════════
+# 엑셀 템플릿 다운로드 / 일괄 업로드
+# ═══════════════════════════════════════════════════════
+
+_EXCEL_HEADERS = {
+    "material": ["품목명*", "코드", "분류", "단위*", "안전재고", "단가(원)", "설명"],
+    "semi":     ["품목명*", "코드", "분류", "단위*", "표준생산량", "단가(원)", "설명"],
+    "product":  ["제품명*", "코드", "분류", "단위*", "단가(원)", "설명"],
+    "partner":  ["업체명*", "사업자번호", "구분(supplier/customer/other)", "담당자", "연락처", "이메일", "주소", "주요제품"],
+    "process":  ["공정명*", "코드", "설명"],
+}
+
+_EXCEL_SAMPLES = {
+    "material": [["밀가루", "MAT-001", "곡물류", "kg", 50, 1200, "강력분"]],
+    "semi":     [["반죽A", "SEM-001", "", "kg", 100, 800, ""]],
+    "product":  [["식빵 500g", "PRD-001", "", "ea", 3500, ""]],
+    "partner":  [["(주)베스트푸드", "123-45-67890", "supplier", "김담당", "010-1234-5678", "", "", "밀가루, 설탕"]],
+    "process":  [["반죽", "PRC-001", "재료 혼합 및 반죽"]],
+}
+
+_EXCEL_TITLES = {
+    "material": "원재료", "semi": "반제품", "product": "제품",
+    "partner": "거래처", "process": "공정",
+}
+
+def _make_excel_template(dtype: str) -> io.BytesIO:
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = _EXCEL_TITLES.get(dtype, dtype)
+
+    header_fill = PatternFill("solid", fgColor="1B7A5E")
+    req_fill    = PatternFill("solid", fgColor="FF6B6B")
+    sample_fill = PatternFill("solid", fgColor="F0FFF8")
+    hdr_font    = Font(bold=True, color="FFFFFF", size=11)
+    border_side = Side(style="thin", color="CCCCCC")
+    thin_border = Border(left=border_side, right=border_side, top=border_side, bottom=border_side)
+
+    headers = _EXCEL_HEADERS[dtype]
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = req_fill if h.endswith("*") else header_fill
+        cell.font = hdr_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = thin_border
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = max(len(h) * 2.2, 14)
+
+    for row_data in _EXCEL_SAMPLES[dtype]:
+        ws.append(row_data)
+        for col in range(1, len(headers) + 1):
+            cell = ws.cell(row=2, column=col)
+            cell.fill = sample_fill
+            cell.border = thin_border
+
+    # 안내 행
+    ws.append([])
+    note_row = ws.max_row + 1
+    ws.cell(row=note_row, column=1, value="※ * 표시 항목은 필수입력입니다. 2행은 예시이므로 삭제 후 입력하세요.")
+    ws.cell(row=note_row, column=1).font = Font(color="888888", italic=True, size=9)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf
+
+@app.get("/api/master/excel-template/{dtype}")
+def download_excel_template(dtype: str):
+    if dtype not in _EXCEL_HEADERS:
+        raise HTTPException(400, "지원하지 않는 유형입니다")
+    buf = _make_excel_template(dtype)
+    filename = f"{_EXCEL_TITLES[dtype]}_양식.xlsx"
+    encoded = quote(filename)
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"},
+    )
+
+@app.post("/api/master/excel-import/{dtype}", status_code=200)
+async def import_excel(dtype: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    if dtype not in _EXCEL_HEADERS:
+        raise HTTPException(400, "지원하지 않는 유형입니다")
+    content = await file.read()
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
+        ws = wb.active
+    except Exception:
+        raise HTTPException(400, "엑셀 파일을 읽을 수 없습니다")
+
+    rows = list(ws.iter_rows(min_row=2, values_only=True))
+    created = 0
+    errors = []
+
+    for i, row in enumerate(rows, start=2):
+        if not row or all(v is None for v in row):
+            continue
+        def v(idx): return str(row[idx]).strip() if row[idx] is not None else ""
+        def n(idx):
+            try: return float(row[idx]) if row[idx] is not None else None
+            except: return None
+
+        try:
+            if dtype == "material":
+                if not v(0): errors.append(f"{i}행: 품목명 누락"); continue
+                db.add(Material(name=v(0), material_code=v(1) or None, category=v(2) or None,
+                    unit=v(3) or "kg", safety_stock=n(4) or 0, unit_price=n(5),
+                    description=v(6) or None, status="active", user_id=uid()))
+            elif dtype == "semi":
+                if not v(0): errors.append(f"{i}행: 품목명 누락"); continue
+                db.add(SemiProduct(name=v(0), code=v(1) or None, category=v(2) or None,
+                    unit=v(3) or "kg", standard_qty=n(4), unit_price=n(5),
+                    description=v(6) or None, status="active", user_id=uid()))
+            elif dtype == "product":
+                if not v(0): errors.append(f"{i}행: 제품명 누락"); continue
+                db.add(FinishedProduct(name=v(0), code=v(1) or None, category=v(2) or None,
+                    unit=v(3) or "ea", unit_price=n(4),
+                    description=v(5) or None, status="active", user_id=uid()))
+            elif dtype == "partner":
+                if not v(0): errors.append(f"{i}행: 업체명 누락"); continue
+                ptype = v(2) if v(2) in ("supplier","customer","other") else "supplier"
+                db.add(Supplier(name=v(0), business_number=v(1) or None, partner_type=ptype,
+                    contact_person=v(3) or None, contact=v(4) or None, email=v(5) or None,
+                    address=v(6) or None, main_products=v(7) or None, status="active", user_id=uid()))
+            elif dtype == "process":
+                if not v(0): errors.append(f"{i}행: 공정명 누락"); continue
+                db.add(Process(name=v(0), code=v(1) or None, description=v(2) or None,
+                    status="active", user_id=uid()))
+            created += 1
+        except Exception as e:
+            errors.append(f"{i}행 오류: {str(e)}")
+
+    db.commit()
+    return {"created": created, "errors": errors}
 
 
 # ═══════════════════════════════════════════════════════
