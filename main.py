@@ -2183,6 +2183,8 @@ def master_delete_partner(pid: int, db: Session = Depends(get_db)):
 # ── 반제품 BOM ─────────────────────────────────────────
 @app.get("/api/master/semi-products/{sid}/bom")
 def get_semi_bom(sid: int, db: Session = Depends(get_db)):
+    if not db.query(SemiProduct).filter(SemiProduct.id == sid, SemiProduct.user_id == uid()).first():
+        raise HTTPException(404, "Not found")
     items = db.query(SemiProductBOM).filter(SemiProductBOM.semi_product_id == sid).all()
     return [
         {"id": b.id,
@@ -2198,7 +2200,7 @@ def get_semi_bom(sid: int, db: Session = Depends(get_db)):
 
 @app.post("/api/master/semi-products/{sid}/bom", status_code=201)
 def add_semi_bom(sid: int, data: SemiProductBOMIn, db: Session = Depends(get_db)):
-    if not db.query(SemiProduct).get(sid):
+    if not db.query(SemiProduct).filter(SemiProduct.id == sid, SemiProduct.user_id == uid()).first():
         raise HTTPException(404, "SemiProduct not found")
     b = SemiProductBOM(semi_product_id=sid, **data.model_dump())
     db.add(b); db.commit(); db.refresh(b)
@@ -2216,6 +2218,8 @@ def delete_semi_bom(sid: int, bid: int, db: Session = Depends(get_db)):
 # ── 반제품 공정 ────────────────────────────────────────
 @app.get("/api/master/semi-products/{sid}/processes")
 def get_semi_processes(sid: int, db: Session = Depends(get_db)):
+    if not db.query(SemiProduct).filter(SemiProduct.id == sid, SemiProduct.user_id == uid()).first():
+        raise HTTPException(404, "Not found")
     items = db.query(SemiProductProcess).filter(
         SemiProductProcess.semi_product_id == sid
     ).order_by(SemiProductProcess.step_order).all()
@@ -2229,7 +2233,7 @@ def get_semi_processes(sid: int, db: Session = Depends(get_db)):
 
 @app.post("/api/master/semi-products/{sid}/processes", status_code=201)
 def add_semi_process(sid: int, data: SemiProductProcessIn, db: Session = Depends(get_db)):
-    if not db.query(SemiProduct).get(sid):
+    if not db.query(SemiProduct).filter(SemiProduct.id == sid, SemiProduct.user_id == uid()).first():
         raise HTTPException(404, "SemiProduct not found")
     pp = SemiProductProcess(semi_product_id=sid, **data.model_dump())
     db.add(pp); db.commit(); db.refresh(pp)
@@ -2249,6 +2253,8 @@ def delete_semi_process(sid: int, ppid: int, db: Session = Depends(get_db)):
 # ── 영업일지 ──────────────────────────────────────────
 @app.get("/api/master/partners/{pid}/sales-logs")
 def get_sales_logs(pid: int, db: Session = Depends(get_db)):
+    if not db.query(Supplier).filter(Supplier.id == pid, Supplier.user_id == uid()).first():
+        raise HTTPException(404, "Not found")
     logs = db.query(SalesLog).filter(SalesLog.supplier_id == pid).order_by(desc(SalesLog.log_date)).all()
     return [
         {"id": lg.id, "log_date": lg.log_date.strftime("%Y-%m-%d"),
@@ -2259,7 +2265,7 @@ def get_sales_logs(pid: int, db: Session = Depends(get_db)):
 
 @app.post("/api/master/partners/{pid}/sales-logs", status_code=201)
 def create_sales_log(pid: int, data: SalesLogIn, db: Session = Depends(get_db)):
-    if not db.query(Supplier).get(pid):
+    if not db.query(Supplier).filter(Supplier.id == pid, Supplier.user_id == uid()).first():
         raise HTTPException(404, "Partner not found")
     lg = SalesLog(
         supplier_id=pid,
@@ -2282,6 +2288,8 @@ def delete_sales_log(pid: int, lid: int, db: Session = Depends(get_db)):
 # ── 원재료-거래처 연결 ────────────────────────────────
 @app.get("/api/master/materials/{mid}/suppliers")
 def get_material_suppliers(mid: int, db: Session = Depends(get_db)):
+    if not db.query(Material).filter(Material.id == mid, Material.user_id == uid()).first():
+        raise HTTPException(404, "Not found")
     links = db.query(MaterialSupplier).filter(MaterialSupplier.material_id == mid).all()
     return [{"id": lk.id, "supplier_id": lk.supplier_id,
              "supplier_name": lk.supplier.name if lk.supplier else "",
@@ -2293,7 +2301,7 @@ class MaterialSupplierIn(BaseModel):
 
 @app.put("/api/master/materials/{mid}/suppliers")
 def set_material_suppliers(mid: int, data: MaterialSupplierIn, db: Session = Depends(get_db)):
-    m = db.query(Material).get(mid)
+    m = db.query(Material).filter(Material.id == mid, Material.user_id == uid()).first()
     if not m:
         raise HTTPException(404, "Not found")
     db.query(MaterialSupplier).filter(MaterialSupplier.material_id == mid).delete()
@@ -2528,6 +2536,8 @@ class BOMItemIn(BaseModel):
 
 @app.get("/api/master/products/{pid}/bom")
 def get_product_bom(pid: int, db: Session = Depends(get_db)):
+    if not db.query(FinishedProduct).filter(FinishedProduct.id == pid, FinishedProduct.user_id == uid()).first():
+        raise HTTPException(404, "Not found")
     items = db.query(ProductBOM).filter(ProductBOM.product_id == pid).all()
     result = []
     for b in items:
@@ -2556,7 +2566,7 @@ def get_product_bom(pid: int, db: Session = Depends(get_db)):
 
 @app.post("/api/master/products/{pid}/bom", status_code=201)
 def add_bom_item(pid: int, data: BOMItemIn, db: Session = Depends(get_db)):
-    if not db.query(FinishedProduct).get(pid):
+    if not db.query(FinishedProduct).filter(FinishedProduct.id == pid, FinishedProduct.user_id == uid()).first():
         raise HTTPException(404, "Product not found")
     b = ProductBOM(product_id=pid, **data.model_dump())
     db.add(b); db.commit(); db.refresh(b)
@@ -2591,6 +2601,8 @@ class ProductProcessIn(BaseModel):
 
 @app.get("/api/master/products/{pid}/processes")
 def get_product_processes(pid: int, db: Session = Depends(get_db)):
+    if not db.query(FinishedProduct).filter(FinishedProduct.id == pid, FinishedProduct.user_id == uid()).first():
+        raise HTTPException(404, "Not found")
     items = db.query(ProductProcess).filter(
         ProductProcess.product_id == pid
     ).order_by(ProductProcess.step_order).all()
@@ -2604,7 +2616,7 @@ def get_product_processes(pid: int, db: Session = Depends(get_db)):
 
 @app.post("/api/master/products/{pid}/processes", status_code=201)
 def add_product_process(pid: int, data: ProductProcessIn, db: Session = Depends(get_db)):
-    if not db.query(FinishedProduct).get(pid):
+    if not db.query(FinishedProduct).filter(FinishedProduct.id == pid, FinishedProduct.user_id == uid()).first():
         raise HTTPException(404, "Product not found")
     pp = ProductProcess(product_id=pid, **data.model_dump())
     db.add(pp); db.commit(); db.refresh(pp)
