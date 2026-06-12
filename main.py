@@ -2464,41 +2464,52 @@ async def import_excel(dtype: str, file: UploadFile = File(...), db: Session = D
         try:
             if dtype == "material":
                 if not cv(0): errors.append(f"{i}행: 품목명 누락"); continue
+                if db.query(Material).filter(Material.name == cv(0), Material.user_id == uid()).first():
+                    errors.append(f"{i}행 건너뜀: '{cv(0)}' 이미 존재"); continue
                 obj = Material(name=cv(0), material_code=cv(1) or None, category=cv(2) or None,
                     unit=cv(3) or "kg", safety_stock=cn(4) or 0, unit_price=cn(5),
                     description=cv(6) or None, status="active", user_id=uid())
             elif dtype == "semi":
                 if not cv(0): errors.append(f"{i}행: 품목명 누락"); continue
+                if db.query(SemiProduct).filter(SemiProduct.name == cv(0), SemiProduct.user_id == uid()).first():
+                    errors.append(f"{i}행 건너뜀: '{cv(0)}' 이미 존재"); continue
                 obj = SemiProduct(name=cv(0), code=cv(1) or None, category=cv(2) or None,
                     unit=cv(3) or "kg", standard_qty=cn(4), unit_price=cn(5),
                     description=cv(6) or None, status="active", user_id=uid())
             elif dtype == "product":
                 if not cv(0): errors.append(f"{i}행: 제품명 누락"); continue
-                obj = FinishedProduct(name=cv(0), code=cv(1) or None, category=cv(2) or None,
+                if db.query(FinishedProduct).filter(FinishedProduct.name == cv(0), FinishedProduct.user_id == uid()).first():
+                    errors.append(f"{i}행 건너뜀: '{cv(0)}' 이미 존재"); continue
+                # 코드 중복 시 코드 없이 등록
+                code_val = cv(1) or None
+                if code_val and db.query(FinishedProduct).filter(FinishedProduct.code == code_val).first():
+                    code_val = None
+                obj = FinishedProduct(name=cv(0), code=code_val, category=cv(2) or None,
                     unit=cv(3) or "ea", unit_price=cn(4),
                     description=cv(5) or None, status="active", user_id=uid())
             elif dtype == "partner":
                 if not cv(0): errors.append(f"{i}행: 업체명 누락"); continue
+                if db.query(Supplier).filter(Supplier.name == cv(0), Supplier.user_id == uid()).first():
+                    errors.append(f"{i}행 건너뜀: '{cv(0)}' 이미 존재"); continue
                 ptype = cv(2) if cv(2) in ("supplier","customer","other") else "supplier"
                 obj = Supplier(name=cv(0), business_number=cv(1) or None, partner_type=ptype,
                     contact_person=cv(3) or None, contact=cv(4) or None, email=cv(5) or None,
                     address=cv(6) or None, main_products=cv(7) or None, status="active", user_id=uid())
             elif dtype == "process":
                 if not cv(0): errors.append(f"{i}행: 공정명 누락"); continue
+                if db.query(Process).filter(Process.name == cv(0), Process.user_id == uid()).first():
+                    errors.append(f"{i}행 건너뜀: '{cv(0)}' 이미 존재"); continue
                 obj = Process(name=cv(0), code=cv(1) or None, description=cv(2) or None,
                     status="active", user_id=uid())
             else:
                 continue
             db.add(obj)
-            db.flush()  # 행별로 즉시 반영해서 오류를 여기서 잡음
+            db.flush()
             created += 1
         except Exception as e:
             db.rollback()
             msg = str(e).split('\n')[0]
-            if "UNIQUE" in msg or "unique" in msg:
-                errors.append(f"{i}행: 코드 또는 이름이 중복됩니다 ({cv(0)})")
-            else:
-                errors.append(f"{i}행 오류: {msg}")
+            errors.append(f"{i}행 오류: {cv(0)} — {msg}")
 
     db.commit()
     return {"created": created, "errors": errors}
