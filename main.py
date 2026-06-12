@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
+from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timedelta
@@ -2025,8 +2026,12 @@ def master_delete_material(mid: int, db: Session = Depends(get_db)):
     m = db.query(Material).filter(Material.id == mid, Material.user_id == uid()).first()
     if not m:
         raise HTTPException(404, "Not found")
-    m.status = "inactive"
-    db.commit()
+    try:
+        db.delete(m)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(400, "입고대장 또는 BOM에서 사용 중인 원재료는 삭제할 수 없습니다.")
     return {"ok": True}
 
 
@@ -2073,8 +2078,12 @@ def master_delete_semi(sid: int, db: Session = Depends(get_db)):
     s = db.query(SemiProduct).filter(SemiProduct.id == sid, SemiProduct.user_id == uid()).first()
     if not s:
         raise HTTPException(404, "Not found")
-    s.status = "inactive"
-    db.commit()
+    try:
+        db.delete(s)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(400, "BOM 또는 생산에서 사용 중인 반제품은 삭제할 수 없습니다.")
     return {"ok": True}
 
 
@@ -2122,8 +2131,12 @@ def master_delete_product(pid: int, db: Session = Depends(get_db)):
     p = db.query(FinishedProduct).filter(FinishedProduct.id == pid, FinishedProduct.user_id == uid()).first()
     if not p:
         raise HTTPException(404, "Not found")
-    p.status = "inactive"
-    db.commit()
+    try:
+        db.delete(p)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(400, "생산 또는 출하 기록이 있는 제품은 삭제할 수 없습니다.")
     return {"ok": True}
 
 
@@ -2175,8 +2188,12 @@ def master_delete_partner(pid: int, db: Session = Depends(get_db)):
     s = db.query(Supplier).filter(Supplier.id == pid, Supplier.user_id == uid()).first()
     if not s:
         raise HTTPException(404, "Not found")
-    s.status = "inactive"
-    db.commit()
+    try:
+        db.delete(s)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(400, "입고 또는 거래 기록이 있는 거래처는 삭제할 수 없습니다.")
     return {"ok": True}
 
 
@@ -2364,8 +2381,12 @@ def master_delete_process(pid: int, db: Session = Depends(get_db)):
     p = db.query(Process).filter(Process.id == pid, Process.user_id == uid()).first()
     if not p:
         raise HTTPException(404, "Not found")
-    p.status = "inactive"
-    db.commit()
+    try:
+        db.delete(p)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(400, "생산공정에 사용 중인 공정은 삭제할 수 없습니다.")
     return {"ok": True}
 
 
