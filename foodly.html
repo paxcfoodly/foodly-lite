@@ -288,7 +288,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
         <div class="auth-form-title">로그인</div>
         <div class="auth-form-sub" style="color:var(--gray);font-size:13px;margin-bottom:20px">아이디 · 사업자등록번호 · 비밀번호로 로그인하세요</div>
         <div class="fl"><div class="fl-lbl">아이디</div><input class="finput" type="text" placeholder="아이디 입력" id="login-username" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-        <div class="fl"><div class="fl-lbl">사업자등록번호</div><input class="finput" type="text" placeholder="000-00-00000" id="login-biznum" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <div class="fl"><div class="fl-lbl">사업자등록번호</div><input class="finput" type="text" placeholder="000-00-00000" id="login-biznum" oninput="formatBizNum(this)" onkeydown="if(event.key==='Enter')doLogin()"/></div>
         <div class="fl">
           <div class="fl-lbl">비밀번호</div>
           <div class="pw-wrap"><input class="finput" type="password" placeholder="비밀번호 입력" id="login-pw" onkeydown="if(event.key==='Enter')doLogin()"/><button class="pw-eye" onclick="togglePw('login-pw',this)">표시</button></div>
@@ -483,7 +483,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="fl"><div class="fl-lbl">아이디 <span class="req">*</span></div><input id="admin-modal-username" class="finput" placeholder="영문+숫자"/></div>
       <div class="fl"><div class="fl-lbl">비밀번호 <span class="req">*</span></div><input id="admin-modal-pw" class="finput" type="password" placeholder="새 비밀번호 (수정 시 빈칸이면 유지)"/></div>
       <div class="fl"><div class="fl-lbl">회사명 <span class="req">*</span></div><input id="admin-modal-company" class="finput" placeholder="(주)예시식품"/></div>
-      <div class="fl"><div class="fl-lbl">사업자등록번호 <span class="req">*</span></div><input id="admin-modal-biznum" class="finput" placeholder="000-00-00000"/></div>
+      <div class="fl"><div class="fl-lbl">사업자등록번호 <span class="req">*</span></div><input id="admin-modal-biznum" class="finput" placeholder="000-00-00000" oninput="formatBizNum(this)"/></div>
       <div class="frow">
         <div class="fl"><div class="fl-lbl">담당자</div><input id="admin-modal-person" class="finput" placeholder="홍길동"/></div>
         <div class="fl"><div class="fl-lbl">연락처</div><input id="admin-modal-contact" class="finput" placeholder="010-0000-0000"/></div>
@@ -1528,6 +1528,14 @@ function goApp(page){
 // ══════════════════════════════
 // AUTH
 // ══════════════════════════════
+function formatBizNum(el) {
+  const digits = el.value.replace(/\D/g, '').slice(0, 10);
+  let v = digits;
+  if (digits.length > 5) v = digits.slice(0,3) + '-' + digits.slice(3,5) + '-' + digits.slice(5);
+  else if (digits.length > 3) v = digits.slice(0,3) + '-' + digits.slice(3);
+  el.value = v;
+}
+
 async function doLogin(){
   const username = (document.getElementById('login-username')?.value || '').trim();
   const biznum   = (document.getElementById('login-biznum')?.value || '').trim();
@@ -3503,7 +3511,7 @@ const masterFormHtml = {
   partner: item => `
     <div class="frow">
       <div class="fl"><div class="fl-lbl">업체명 <span class="req">*</span></div><input id="mf-name" class="finput" value="${item?.name||''}" required/></div>
-      <div class="fl"><div class="fl-lbl">사업자등록번호</div><input id="mf-bizno" class="finput" value="${item?.business_number||''}"/></div>
+      <div class="fl"><div class="fl-lbl">사업자등록번호</div><input id="mf-bizno" class="finput" oninput="formatBizNum(this)" value="${item?.business_number||''}"/></div>
     </div>
     <div class="frow">
       <div class="fl"><div class="fl-lbl">구분</div>
