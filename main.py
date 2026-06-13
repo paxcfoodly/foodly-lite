@@ -43,7 +43,7 @@ from database import (
     SemiProduct, FinishedProduct, Process, ProductBOM,
     ProductProcess, MaterialSupplier, ProductionPlan,
     SalesLog, SemiProductBOM, SemiProductProcess, StockAdjustment,
-    Shipment, ReceiptNonconformance,
+    Shipment, ReceiptNonconformance, InspectionStaff,
     TenantUser, UserSession, hash_password, verify_password, ensure_admin,
     SessionLocal,
 )
@@ -711,6 +711,33 @@ def add_nonconformance(data: NonconformanceCreate, db: Session = Depends(get_db)
     )
     db.add(nc); db.commit(); db.refresh(nc)
     return {"id": nc.id}
+
+
+# ── 검사 담당자 관리 ──────────────────────────────────────
+@app.get("/api/inspection-staff")
+def list_inspection_staff(db: Session = Depends(get_db)):
+    rows = db.query(InspectionStaff).filter(InspectionStaff.user_id == uid()).order_by(InspectionStaff.id).all()
+    return [{"id": r.id, "name": r.name} for r in rows]
+
+@app.post("/api/inspection-staff", status_code=201)
+def create_inspection_staff(data: dict, db: Session = Depends(get_db)):
+    name = (data.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "이름을 입력하세요")
+    if db.query(InspectionStaff).filter(InspectionStaff.user_id == uid(), InspectionStaff.name == name).first():
+        raise HTTPException(409, "이미 등록된 이름입니다")
+    s = InspectionStaff(name=name, user_id=uid())
+    db.add(s); db.commit(); db.refresh(s)
+    return {"id": s.id, "name": s.name}
+
+@app.delete("/api/inspection-staff/{sid}", status_code=200)
+def delete_inspection_staff(sid: int, db: Session = Depends(get_db)):
+    s = db.query(InspectionStaff).filter(InspectionStaff.id == sid, InspectionStaff.user_id == uid()).first()
+    if not s:
+        raise HTTPException(404, "Not found")
+    db.delete(s); db.commit()
+    return {"ok": True}
+
 
 @app.delete("/api/receipts/{receipt_id}", status_code=200)
 def delete_receipt(receipt_id: int, db: Session = Depends(get_db)):

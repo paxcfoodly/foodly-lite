@@ -307,6 +307,14 @@ class ReceiptNonconformance(Base):
     receipt = relationship("Receipt", back_populates="nonconformances")
 
 
+class InspectionStaff(Base):
+    __tablename__ = "inspection_staff"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    user_id = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class Device(Base):
     __tablename__ = "devices"
     id = Column(Integer, primary_key=True, index=True)
@@ -497,6 +505,7 @@ def migrate_db():
         "ALTER TABLE receipts ADD COLUMN confirmer TEXT",
         # 부적합 조치사항
         "ALTER TABLE receipt_nonconformances ADD COLUMN action TEXT",
+        # 검사 담당자 테이블 생성은 create_all로 처리
     ]
     with engine.connect() as conn:
         for sql in migrations:
