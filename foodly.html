@@ -591,7 +591,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
           <div class="kpi" id="dash-kpi-alert"><div class="kl">재고 알림</div><div class="kv" id="dash-kv-alert">— <span class="ku">건</span></div><div class="ks" id="dash-ks-alert">확인 중</div></div>
         </div>
         <div class="grid2">
-          <div class="card"><div class="card-head"><div class="card-title">주간 생산 추이</div><div style="display:flex;gap:12px;font-size:11px;color:var(--gray)"><span><span style="display:inline-block;width:10px;height:10px;background:var(--teal-md);border-radius:2px;margin-right:3px"></span>양품</span><span><span style="display:inline-block;width:10px;height:10px;background:var(--red-md);border-radius:2px;margin-right:3px"></span>불량</span></div></div><div class="card-body" style="height:200px;position:relative"><canvas id="dash-chart"></canvas></div></div>
+          <div class="card"><div class="card-head"><div class="card-title">주간 생산 추이</div><div style="display:flex;gap:12px;font-size:11px;color:var(--gray)"><span><span style="display:inline-block;width:10px;height:10px;background:var(--teal-md);border-radius:2px;margin-right:3px"></span>양품</span><span><span style="display:inline-block;width:10px;height:10px;background:var(--red-md);border-radius:2px;margin-right:3px"></span>불량</span></div></div><div class="card-body" style="height:200px;position:relative"><canvas id="dash-chart" style="display:none"></canvas><div id="dash-chart-empty" style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--gray-md);font-size:13px">생산 실적이 없습니다</div></div></div>
           <div class="card"><div class="card-head"><div class="card-title">최근 입고</div><span class="section-link" onclick="goApp('receipt')">전체 보기 →</span></div><div id="dash-recent-receipts" class="card-body" style="padding:0"><div style="padding:24px;text-align:center;color:var(--gray-md)">로딩 중...</div></div></div>
         </div>
         <div class="grid2">
@@ -1996,7 +1996,11 @@ async function loadDashboard() {
 
   // 주간 차트
   const canvas = document.getElementById('dash-chart');
-  if (canvas && data.week_chart && data.week_chart.length) {
+  const chartEmpty = document.getElementById('dash-chart-empty');
+  const hasData = data.week_chart && data.week_chart.some(d => (d.good || 0) + (d.defect || 0) > 0);
+  if (canvas) canvas.style.display = hasData ? 'block' : 'none';
+  if (chartEmpty) chartEmpty.style.display = hasData ? 'none' : 'flex';
+  if (canvas && hasData) {
     if (dashChartInst) { dashChartInst.destroy(); dashChartInst = null; }
     dashChartInst = new Chart(canvas, {
       type: 'bar',
@@ -2011,6 +2015,8 @@ async function loadDashboard() {
         scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:11},color:'#888780'}},
                 y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},color:'#888780'}}}}
     });
+  } else if (dashChartInst) {
+    dashChartInst.destroy(); dashChartInst = null;
   }
 
   // 최근 입고
