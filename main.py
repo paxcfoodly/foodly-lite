@@ -2480,6 +2480,7 @@ async def import_excel(dtype: str, file: UploadFile = File(...), db: Session = D
 
     rows = list(ws.iter_rows(min_row=2, values_only=True))
     created = 0
+    updated = 0
     errors = []
 
     for i, row in enumerate(rows, start=2):
@@ -2493,22 +2494,41 @@ async def import_excel(dtype: str, file: UploadFile = File(...), db: Session = D
         try:
             if dtype == "material":
                 if not cv(0): errors.append(f"{i}행: 품목명 누락"); continue
-                if db.query(Material).filter(Material.name == cv(0), Material.user_id == uid()).first():
-                    errors.append(f"{i}행 건너뜀: '{cv(0)}' 이미 존재"); continue
+                existing = db.query(Material).filter(Material.name == cv(0), Material.user_id == uid()).first()
+                if existing:
+                    existing.material_code = cv(1) or existing.material_code
+                    existing.category = cv(2) or existing.category
+                    existing.unit = cv(3) or existing.unit
+                    if cn(4) is not None: existing.safety_stock = cn(4)
+                    if cn(5) is not None: existing.unit_price = cn(5)
+                    existing.description = cv(6) or existing.description
+                    db.flush(); updated += 1; continue
                 obj = Material(name=cv(0), material_code=cv(1) or None, category=cv(2) or None,
                     unit=cv(3) or "kg", safety_stock=cn(4) or 0, unit_price=cn(5),
                     description=cv(6) or None, status="active", user_id=uid())
             elif dtype == "semi":
                 if not cv(0): errors.append(f"{i}행: 품목명 누락"); continue
-                if db.query(SemiProduct).filter(SemiProduct.name == cv(0), SemiProduct.user_id == uid()).first():
-                    errors.append(f"{i}행 건너뜀: '{cv(0)}' 이미 존재"); continue
+                existing = db.query(SemiProduct).filter(SemiProduct.name == cv(0), SemiProduct.user_id == uid()).first()
+                if existing:
+                    existing.code = cv(1) or existing.code
+                    existing.category = cv(2) or existing.category
+                    existing.unit = cv(3) or existing.unit
+                    if cn(4) is not None: existing.standard_qty = cn(4)
+                    if cn(5) is not None: existing.unit_price = cn(5)
+                    existing.description = cv(6) or existing.description
+                    db.flush(); updated += 1; continue
                 obj = SemiProduct(name=cv(0), code=cv(1) or None, category=cv(2) or None,
                     unit=cv(3) or "kg", standard_qty=cn(4), unit_price=cn(5),
                     description=cv(6) or None, status="active", user_id=uid())
             elif dtype == "product":
                 if not cv(0): errors.append(f"{i}행: 제품명 누락"); continue
-                if db.query(FinishedProduct).filter(FinishedProduct.name == cv(0), FinishedProduct.user_id == uid()).first():
-                    errors.append(f"{i}행 건너뜀: '{cv(0)}' 이미 존재"); continue
+                existing = db.query(FinishedProduct).filter(FinishedProduct.name == cv(0), FinishedProduct.user_id == uid()).first()
+                if existing:
+                    existing.category = cv(2) or existing.category
+                    existing.unit = cv(3) or existing.unit
+                    if cn(4) is not None: existing.unit_price = cn(4)
+                    existing.description = cv(5) or existing.description
+                    db.flush(); updated += 1; continue
                 # 코드 중복 시 코드 없이 등록
                 code_val = cv(1) or None
                 if code_val and db.query(FinishedProduct).filter(FinishedProduct.code == code_val).first():
@@ -2518,16 +2538,28 @@ async def import_excel(dtype: str, file: UploadFile = File(...), db: Session = D
                     description=cv(5) or None, status="active", user_id=uid())
             elif dtype == "partner":
                 if not cv(0): errors.append(f"{i}행: 업체명 누락"); continue
-                if db.query(Supplier).filter(Supplier.name == cv(0), Supplier.user_id == uid()).first():
-                    errors.append(f"{i}행 건너뜀: '{cv(0)}' 이미 존재"); continue
+                existing = db.query(Supplier).filter(Supplier.name == cv(0), Supplier.user_id == uid()).first()
+                if existing:
+                    if cv(1): existing.business_number = cv(1)
+                    ptype = cv(2) if cv(2) in ("supplier","customer","other") else None
+                    if ptype: existing.partner_type = ptype
+                    if cv(3): existing.contact_person = cv(3)
+                    if cv(4): existing.contact = cv(4)
+                    if cv(5): existing.email = cv(5)
+                    if cv(6): existing.address = cv(6)
+                    if cv(7): existing.main_products = cv(7)
+                    db.flush(); updated += 1; continue
                 ptype = cv(2) if cv(2) in ("supplier","customer","other") else "supplier"
                 obj = Supplier(name=cv(0), business_number=cv(1) or None, partner_type=ptype,
                     contact_person=cv(3) or None, contact=cv(4) or None, email=cv(5) or None,
                     address=cv(6) or None, main_products=cv(7) or None, status="active", user_id=uid())
             elif dtype == "process":
                 if not cv(0): errors.append(f"{i}행: 공정명 누락"); continue
-                if db.query(Process).filter(Process.name == cv(0), Process.user_id == uid()).first():
-                    errors.append(f"{i}행 건너뜀: '{cv(0)}' 이미 존재"); continue
+                existing = db.query(Process).filter(Process.name == cv(0), Process.user_id == uid()).first()
+                if existing:
+                    if cv(1): existing.code = cv(1)
+                    if cv(2): existing.description = cv(2)
+                    db.flush(); updated += 1; continue
                 obj = Process(name=cv(0), code=cv(1) or None, description=cv(2) or None,
                     status="active", user_id=uid())
             else:
@@ -2541,7 +2573,7 @@ async def import_excel(dtype: str, file: UploadFile = File(...), db: Session = D
             errors.append(f"{i}행 오류: {cv(0)} — {msg}")
 
     db.commit()
-    return {"created": created, "errors": errors}
+    return {"created": created, "updated": updated, "errors": errors}
 
 
 # ═══════════════════════════════════════════════════════

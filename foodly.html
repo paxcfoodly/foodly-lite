@@ -2435,7 +2435,11 @@ async function submitExcelImport() {
     try { data = JSON.parse(text); } catch { data = { detail: text }; }
     if (resp.ok) {
       res.style.background = '#f0fff8'; res.style.border = '1px solid #b2dfdb'; res.style.color = '#1B7A5E';
-      res.innerHTML = `✅ <b>${data.created}건</b> 등록 완료` +
+      const parts = [];
+      if (data.created) parts.push(`<b>${data.created}건</b> 신규 등록`);
+      if (data.updated) parts.push(`<b>${data.updated}건</b> 수정`);
+      if (!parts.length) parts.push('변경 사항 없음');
+      res.innerHTML = `✅ ` + parts.join(', ') +
         (data.errors && data.errors.length ? `<br><span style="color:#e53e3e">${data.errors.join('<br>')}</span>` : '');
       if (_excelImportRefresh) _excelImportRefresh();
     } else {
