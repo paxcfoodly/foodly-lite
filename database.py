@@ -299,6 +299,7 @@ class ReceiptNonconformance(Base):
     receipt_id = Column(Integer, ForeignKey("receipts.id"), nullable=False)
     date = Column(String)
     content = Column(String)
+    action = Column(String)
     inspector = Column(String)
     user_id = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -494,6 +495,8 @@ def migrate_db():
         "ALTER TABLE receipts ADD COLUMN judgment_ok INTEGER",
         "ALTER TABLE receipts ADD COLUMN inspector TEXT",
         "ALTER TABLE receipts ADD COLUMN confirmer TEXT",
+        # 부적합 조치사항
+        "ALTER TABLE receipt_nonconformances ADD COLUMN action TEXT",
     ]
     with engine.connect() as conn:
         for sql in migrations:

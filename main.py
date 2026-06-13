@@ -347,6 +347,7 @@ class NonconformanceCreate(BaseModel):
     receipt_id: int
     date: Optional[str] = None
     content: str
+    action: Optional[str] = None
     inspector: Optional[str] = None
 
 class ProductionCreate(BaseModel):
@@ -690,6 +691,7 @@ def get_ingodaejang(
         "nonconformances": [{
             "date": nc.date or "",
             "content": nc.content or "",
+            "action": nc.action or "",
             "inspector": nc.inspector or "",
         } for nc in nc_all],
     }
@@ -703,6 +705,7 @@ def add_nonconformance(data: NonconformanceCreate, db: Session = Depends(get_db)
         receipt_id=data.receipt_id,
         date=data.date,
         content=data.content,
+        action=data.action,
         inspector=data.inspector,
         user_id=uid(),
     )
