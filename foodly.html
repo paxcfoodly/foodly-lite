@@ -2638,41 +2638,28 @@ async function loadIngodaejang() {
 
   const chk = (v) => v === true ? '☑ 적합' : v === false ? '☑ 부적합' : '□ 적합<br>□ 부적합';
 
-  const BLANK_ROW = `<tr>
-    <td style="border:1px solid #ccc;padding:14px"></td>
-    <td style="border:1px solid #ccc;padding:14px"></td>
-    <td style="border:1px solid #ccc;padding:14px;text-align:center;line-height:1.8;color:#bbb">□ 적합<br>□ 부적합</td>
-    <td style="border:1px solid #ccc;padding:14px"></td>
-    <td style="border:1px solid #ccc;padding:14px;text-align:center;line-height:1.8;color:#bbb">□ 적합<br>□ 부적합</td>
-    <td style="border:1px solid #ccc;padding:14px;text-align:center;line-height:1.8;color:#bbb">□ 적합<br>□ 부적합</td>
-    <td style="border:1px solid #ccc;padding:14px"></td>
-    <td style="border:1px solid #ccc;padding:14px"></td>
-  </tr>`;
-  const MIN_ROWS = 10;
   const tbody = document.getElementById('ingoda-tbody');
-  const dataRows = data.rows.map(r => `<tr>
-    <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.delivery_date}</td>
-    <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.supplier_name}</td>
-    <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.packaging_ok)}</td>
-    <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.expiry_date}</td>
-    <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.visual_ok)}</td>
-    <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.judgment_ok)}</td>
-    <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.inspector}</td>
-    <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.confirmer}</td>
-  </tr>`);
-  const blankCount = Math.max(0, MIN_ROWS - dataRows.length);
-  tbody.innerHTML = dataRows.join('') + Array(blankCount).fill(BLANK_ROW).join('');
+  tbody.innerHTML = data.rows.length
+    ? data.rows.map(r => `<tr>
+        <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.delivery_date}</td>
+        <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.supplier_name}</td>
+        <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.packaging_ok)}</td>
+        <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.expiry_date}</td>
+        <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.visual_ok)}</td>
+        <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.judgment_ok)}</td>
+        <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.inspector}</td>
+        <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.confirmer}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="8" style="border:1px solid #ccc;padding:12px;text-align:center;color:#999">입고 이력이 없습니다</td></tr>';
 
   const ncTbody = document.getElementById('ingoda-nc-tbody');
-  const NC_MIN = 3;
-  const ncDataRows = data.nonconformances.map(nc => `<tr>
-    <td style="border:1px solid #ccc;padding:5px;text-align:center">${nc.date}</td>
-    <td style="border:1px solid #ccc;padding:5px">${nc.content}${nc.action ? `<br><span style="color:#666">▶ 조치: ${nc.action}</span>` : ''}</td>
-    <td style="border:1px solid #ccc;padding:5px;text-align:center">${nc.inspector}</td>
-  </tr>`);
-  const ncBlankCount = Math.max(0, NC_MIN - ncDataRows.length);
-  const ncBlank = '<tr><td style="border:1px solid #ccc;padding:14px"></td><td style="border:1px solid #ccc;padding:14px"></td><td style="border:1px solid #ccc;padding:14px"></td></tr>';
-  ncTbody.innerHTML = ncDataRows.join('') + Array(ncBlankCount).fill(ncBlank).join('');
+  ncTbody.innerHTML = data.nonconformances.length
+    ? data.nonconformances.map(nc => `<tr>
+        <td style="border:1px solid #ccc;padding:5px;text-align:center">${nc.date}</td>
+        <td style="border:1px solid #ccc;padding:5px">${nc.content}${nc.action ? `<br><span style="color:#666">▶ 조치: ${nc.action}</span>` : ''}</td>
+        <td style="border:1px solid #ccc;padding:5px;text-align:center">${nc.inspector}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="3" style="border:1px solid #ccc;padding:12px;text-align:center;color:#999">부적합 이력이 없습니다</td></tr>';
 }
 
 function printIngodaejang() {
