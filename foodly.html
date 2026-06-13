@@ -1746,6 +1746,7 @@ async function doLogin(){
     localStorage.setItem('foodly_token', data.token);
     localStorage.setItem('foodly_role',  data.role);
     localStorage.setItem('foodly_company', data.company_name || '');
+    localStorage.setItem('foodly_biz_number', data.business_number || '');
     localStorage.setItem('foodly_username', data.username || username);
     if(data.role === 'admin'){
       goApp('admin-users');
@@ -2544,48 +2545,77 @@ async function loadIngodaejang() {
 
   const chk = (v) => v === true ? '☑ 적합' : v === false ? '☑ 부적합' : '□ 적합<br>□ 부적합';
 
+  const BLANK_ROW = `<tr>
+    <td style="border:1px solid #ccc;padding:14px"></td>
+    <td style="border:1px solid #ccc;padding:14px"></td>
+    <td style="border:1px solid #ccc;padding:14px;text-align:center;line-height:1.8;color:#bbb">□ 적합<br>□ 부적합</td>
+    <td style="border:1px solid #ccc;padding:14px"></td>
+    <td style="border:1px solid #ccc;padding:14px;text-align:center;line-height:1.8;color:#bbb">□ 적합<br>□ 부적합</td>
+    <td style="border:1px solid #ccc;padding:14px;text-align:center;line-height:1.8;color:#bbb">□ 적합<br>□ 부적합</td>
+    <td style="border:1px solid #ccc;padding:14px"></td>
+    <td style="border:1px solid #ccc;padding:14px"></td>
+  </tr>`;
+  const MIN_ROWS = 10;
   const tbody = document.getElementById('ingoda-tbody');
-  if (!data.rows.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999">해당 기간 입고 내역이 없습니다</td></tr>';
-  } else {
-    tbody.innerHTML = data.rows.map(r => `<tr>
-      <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.delivery_date}</td>
-      <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.supplier_name}</td>
-      <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.packaging_ok)}</td>
-      <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.expiry_date}</td>
-      <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.visual_ok)}</td>
-      <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.judgment_ok)}</td>
-      <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.inspector}</td>
-      <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.confirmer}</td>
-    </tr>`).join('');
-  }
+  const dataRows = data.rows.map(r => `<tr>
+    <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.delivery_date}</td>
+    <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.supplier_name}</td>
+    <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.packaging_ok)}</td>
+    <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.expiry_date}</td>
+    <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.visual_ok)}</td>
+    <td style="border:1px solid #ccc;padding:5px;text-align:center;line-height:1.8">${chk(r.judgment_ok)}</td>
+    <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.inspector}</td>
+    <td style="border:1px solid #ccc;padding:5px;text-align:center">${r.confirmer}</td>
+  </tr>`);
+  const blankCount = Math.max(0, MIN_ROWS - dataRows.length);
+  tbody.innerHTML = dataRows.join('') + Array(blankCount).fill(BLANK_ROW).join('');
 
   const ncTbody = document.getElementById('ingoda-nc-tbody');
-  const emptyNcRows = Math.max(3, data.nonconformances.length + 1);
-  const ncRows = [...data.nonconformances.map(nc => `<tr>
-      <td style="border:1px solid #ccc;padding:5px;text-align:center">${nc.date}</td>
-      <td style="border:1px solid #ccc;padding:5px">${nc.content}</td>
-      <td style="border:1px solid #ccc;padding:5px;text-align:center">${nc.inspector}</td>
-    </tr>`),
-    ...Array(emptyNcRows - data.nonconformances.length).fill(
-      '<tr><td style="border:1px solid #ccc;padding:14px"></td><td style="border:1px solid #ccc;padding:14px"></td><td style="border:1px solid #ccc;padding:14px"></td></tr>'
-    )];
-  ncTbody.innerHTML = ncRows.join('');
+  const NC_MIN = 3;
+  const ncDataRows = data.nonconformances.map(nc => `<tr>
+    <td style="border:1px solid #ccc;padding:5px;text-align:center">${nc.date}</td>
+    <td style="border:1px solid #ccc;padding:5px">${nc.content}${nc.action ? `<br><span style="color:#666">▶ 조치: ${nc.action}</span>` : ''}</td>
+    <td style="border:1px solid #ccc;padding:5px;text-align:center">${nc.inspector}</td>
+  </tr>`);
+  const ncBlankCount = Math.max(0, NC_MIN - ncDataRows.length);
+  const ncBlank = '<tr><td style="border:1px solid #ccc;padding:14px"></td><td style="border:1px solid #ccc;padding:14px"></td><td style="border:1px solid #ccc;padding:14px"></td></tr>';
+  ncTbody.innerHTML = ncDataRows.join('') + Array(ncBlankCount).fill(ncBlank).join('');
 }
 
 function printIngodaejang() {
-  const area = document.getElementById('ingoda-print-area');
-  if (!area) return;
+  const content = document.getElementById('ingoda-content');
+  if (!content || content.style.display === 'none') { alert('먼저 원료를 선택하고 조회하세요.'); return; }
+  const company = localStorage.getItem('foodly_company') || '';
+  const bizNum  = localStorage.getItem('foodly_biz_number') || '';
+  const headerHtml = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <div style="font-size:14px;font-weight:700">${company}</div>
+        ${bizNum ? `<div style="font-size:12px;color:#555">사업자등록번호: ${bizNum}</div>` : ''}
+      </div>
+      <div style="border:1px solid #333;padding:6px 20px;font-size:13px;font-weight:600">원료명: <span id="ingoda-matname-print">${document.getElementById('ingoda-matname')?.textContent || ''}</span></div>
+    </div>`;
+  const tableHtml = document.getElementById('ingoda-table')?.outerHTML || '';
+  const ncLabel  = `<div style="font-size:12px;font-weight:700;margin:14px 0 6px">부적합내역 및 조치사항</div>`;
+  const ncTable  = document.getElementById('ingoda-nc-table')?.outerHTML || '';
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>입고대장</title>
     <style>
-      body{font-family:'Malgun Gothic',sans-serif;font-size:12px;margin:20px}
+      *{box-sizing:border-box}
+      body{font-family:'Malgun Gothic',sans-serif;font-size:12px;margin:15mm 15mm 10mm}
       table{border-collapse:collapse;width:100%}
       th,td{border:1px solid #333;padding:6px}
       th{background:#f0f0f0;text-align:center}
-      h2{font-size:18px;font-weight:800}
-      @media print{body{margin:10mm}}
-    </style></head><body>${area.innerHTML}</body></html>`);
+      h2{font-size:16px;font-weight:800;margin:0 0 14px 0;text-align:center;letter-spacing:2px}
+      @page{size:A4;margin:0}
+      @media print{body{margin:15mm 15mm 10mm}}
+    </style></head><body>
+    <h2>입 고 대 장</h2>
+    ${headerHtml}
+    ${tableHtml}
+    ${ncLabel}
+    ${ncTable}
+  </body></html>`);
   w.document.close();
   w.print();
 }

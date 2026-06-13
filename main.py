@@ -174,7 +174,7 @@ def user_login(data: LoginIn, db: Session = Depends(get_db)):
     if not user or user.business_number != data.business_number or not verify_password(data.password, user.password_hash):
         raise HTTPException(401, "아이디, 사업자등록번호 또는 비밀번호가 올바르지 않습니다")
     token = _make_session(db, user.id, 'user')
-    return {"token": token, "role": "user", "company_name": user.company_name, "username": user.username}
+    return {"token": token, "role": "user", "company_name": user.company_name, "username": user.username, "business_number": user.business_number}
 
 @app.post("/api/auth/admin/login")
 def admin_login(data: AdminLoginIn, db: Session = Depends(get_db)):
