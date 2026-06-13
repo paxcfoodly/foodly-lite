@@ -2680,33 +2680,36 @@ function printIngodaejang() {
   if (!content || content.style.display === 'none') { alert('먼저 원료를 선택하고 조회하세요.'); return; }
   const company = localStorage.getItem('foodly_company') || '';
   const bizNum  = localStorage.getItem('foodly_biz_number') || '';
-  const headerHtml = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div>
-        <div style="font-size:14px;font-weight:700">${company}</div>
-        ${bizNum ? `<div style="font-size:12px;color:#555">사업자등록번호: ${bizNum}</div>` : ''}
-      </div>
-      <div style="border:1px solid #333;padding:6px 20px;font-size:13px;font-weight:600">원료명: <span id="ingoda-matname-print">${document.getElementById('ingoda-matname')?.textContent || ''}</span></div>
-    </div>`;
+  const matname = document.getElementById('ingoda-matname')?.textContent || '';
   const tableHtml = document.getElementById('ingoda-table')?.outerHTML || '';
-  const ncLabel  = `<div style="font-size:12px;font-weight:700;margin:14px 0 6px">부적합내역 및 조치사항</div>`;
-  const ncTable  = document.getElementById('ingoda-nc-table')?.outerHTML || '';
+  const ncTable   = document.getElementById('ingoda-nc-table')?.outerHTML || '';
   const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>입고대장</title>
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>원재료 입고 검사지</title>
     <style>
       *{box-sizing:border-box}
       body{font-family:'Malgun Gothic',sans-serif;font-size:12px;margin:15mm 15mm 10mm}
       table{border-collapse:collapse;width:100%}
       th,td{border:1px solid #333;padding:6px}
       th{background:#f0f0f0;text-align:center}
-      h2{font-size:16px;font-weight:800;margin:0 0 14px 0;text-align:center;letter-spacing:2px}
+      .doc-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px}
+      .doc-company{font-size:13px;font-weight:700;line-height:1.6}
+      .doc-biz{font-size:11px;color:#555}
+      .doc-matbox{border:1px solid #333;padding:5px 16px;font-size:12px;font-weight:600}
+      h1{font-size:26px;font-weight:900;text-align:center;margin:10px 0 14px;letter-spacing:1px}
+      .nc-label{font-size:12px;font-weight:700;margin:14px 0 6px}
       @page{size:A4;margin:0}
       @media print{body{margin:15mm 15mm 10mm}}
     </style></head><body>
-    <h2>입 고 대 장</h2>
-    ${headerHtml}
+    <div class="doc-top">
+      <div>
+        ${company ? `<div class="doc-company">${company}</div>` : ''}
+        ${bizNum  ? `<div class="doc-biz">사업자등록번호: ${bizNum}</div>` : ''}
+      </div>
+      <div class="doc-matbox">원료명: ${matname}</div>
+    </div>
+    <h1>원재료 입고 검사지</h1>
     ${tableHtml}
-    ${ncLabel}
+    <div class="nc-label">부적합내역 및 조치사항</div>
     ${ncTable}
   </body></html>`);
   w.document.close();
