@@ -264,6 +264,51 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .search-input{height:34px;padding:0 12px;border:1px solid var(--gray-bd);border-radius:var(--radius-sm);font-size:13px;outline:none;background:var(--white);color:var(--dark);width:220px}
 .search-input:focus{border-color:var(--teal)}
 .filter-select{height:34px;padding:0 10px;border:1px solid var(--gray-bd);border-radius:var(--radius-sm);font-size:13px;background:var(--white);color:var(--dark);outline:none}
+
+/* ══════════════════════════════
+   모바일 반응형
+══════════════════════════════ */
+.mob-bar{display:none;align-items:center;gap:10px;padding:0 16px;height:52px;background:var(--white);border-bottom:1px solid var(--gray-bd);flex-shrink:0;position:sticky;top:0;z-index:100}
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:150;transition:opacity .25s;opacity:0}
+.mob-overlay.show{opacity:1}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.done-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+@media(max-width:768px){
+  .nav{position:fixed;top:0;left:-100%;width:78%;max-width:260px;height:100%;z-index:200;transition:left .25s;box-shadow:4px 0 24px rgba(0,0,0,.2)}
+  .nav.mob-open{left:0}
+  .mob-overlay{display:block}
+  .mob-bar{display:flex}
+  .app{flex-direction:column;height:100svh}
+  .main{flex:1;overflow-y:auto;overflow-x:hidden}
+  .page-head{padding:10px 16px;flex-wrap:wrap;gap:8px}
+  .page-title{font-size:17px}
+  .page-actions{flex-wrap:wrap}
+  .page-body{padding:12px 16px;gap:12px}
+  .grid2{grid-template-columns:1fr !important}
+  .frow{grid-template-columns:1fr !important}
+  .kgrid{grid-template-columns:1fr 1fr !important}
+  .step-bar{padding:10px 12px}
+  .step-name{font-size:10px}
+  .step-line{max-width:20px;margin:0 4px}
+  .auth-page{grid-template-columns:1fr}
+  .auth-left{display:none}
+  .auth-right{padding:32px 20px}
+  .done-btns{flex-direction:column;align-items:stretch}
+  .done-btns .btn{width:100%}
+  /* 수동입고 하단 고정 버튼 */
+  .receipt-sticky{display:flex !important}
+  #app-receipt-manual .page-head .btn-primary{display:none !important}
+  #app-receipt-manual .page-body{padding-bottom:76px !important}
+  /* 수동입고 2열 → 1열 */
+  .receipt-form-grid{grid-template-columns:1fr !important}
+}
+@media(max-width:480px){
+  .kgrid{grid-template-columns:1fr !important}
+  .step-name{display:none}
+}
+.receipt-sticky{display:none;position:fixed;bottom:0;left:0;right:0;padding:12px 16px;background:var(--white);border-top:1px solid var(--gray-bd);gap:10px;z-index:50;align-items:center}
+.receipt-sticky .btn{flex:1}
 </style>
 </head>
 <body>
@@ -573,8 +618,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
     </div>
   </nav>
 
+  <div class="mob-overlay" id="mob-overlay" onclick="closeMobNav()"></div>
+
   <!-- MAIN CONTENT AREA -->
   <main class="main">
+    <div class="mob-bar">
+      <button onclick="openMobNav()" style="background:none;border:none;cursor:pointer;padding:6px;color:var(--dark);display:flex;align-items:center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span style="font-size:16px;font-weight:700;flex:1">food<em style="color:var(--teal);font-style:normal">ly</em></span>
+      <span id="mob-page-title" style="font-size:13px;color:var(--gray-md)"></span>
+    </div>
 
     <!-- ── 대시보드 ── -->
     <div id="app-dashboard" class="hidden">
@@ -644,12 +698,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
           </div>
         </div>
         <div class="card"><div class="card-head"><div class="card-title">최근 입고 이력</div></div>
-        <table class="tbl"><colgroup><col style="width:180px"/><col style="width:130px"/><col style="width:90px"/><col style="width:80px"/><col style="width:70px"/><col style="width:60px"/><col style="width:55px"/></colgroup>
+        <div class="tbl-wrap"><table class="tbl"><colgroup><col style="min-width:160px"/><col style="min-width:120px"/><col style="min-width:80px"/><col style="min-width:80px"/><col style="min-width:60px"/><col style="min-width:60px"/><col style="min-width:50px"/></colgroup>
           <thead><tr><th>원료명 / 공급처</th><th>로트번호</th><th class="r">수량</th><th class="r">납품일</th><th>입력</th><th>상태</th><th></th></tr></thead>
           <tbody id="receipt-history-tbody">
             <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gray-md)">로딩 중...</td></tr>
           </tbody>
-        </table></div>
+        </table></div></div>
       </div>
     </div>
 
@@ -747,7 +801,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
           <div style="font-size:22px;font-weight:700;margin-bottom:6px">입고가 완료되었습니다</div>
           <div style="font-size:14px;color:var(--gray);margin-bottom:24px">재고에 자동 반영되었습니다</div>
           <div id="receipt-done-detail" style="background:var(--white);border:1px solid var(--gray-bd);border-radius:var(--radius);padding:16px 24px;width:100%;max-width:420px;margin-bottom:20px"></div>
-          <div style="display:flex;gap:10px">
+          <div class="done-btns">
             <button class="btn btn-ghost" onclick="goApp('ledger')">수불대장 확인</button>
             <button class="btn btn-outline" onclick="goApp('stock')">재고 현황</button>
             <button class="btn btn-primary" onclick="goApp('receipt')">+ 추가 입고 등록</button>
@@ -1239,7 +1293,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
         <div id="receipt-no-material-warn" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:12px;color:#856404;font-size:13px">
           ⚠ 등록된 원재료가 없습니다. 먼저 <a href="javascript:void(0)" onclick="goApp('mat-master')" style="color:var(--teal);font-weight:700">원재료 관리</a>에서 원재료를 등록해 주세요.
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch">
+        <div class="receipt-form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch">
           <!-- 입고 정보 -->
           <div class="card" style="display:flex;flex-direction:column">
             <div class="card-head"><div class="card-title">입고 정보 입력</div></div>
@@ -1328,6 +1382,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
             </div>
           </div>
         </div>
+      </div>
+      <!-- 모바일 하단 고정 버튼 -->
+      <div class="receipt-sticky">
+        <button class="btn btn-ghost" onclick="goApp('receipt')">← 취소</button>
+        <button class="btn btn-primary" onclick="submitReceipt()">입고 등록</button>
       </div>
     </div>
 
@@ -1632,7 +1691,32 @@ function go(screen){
   if(target) target.classList.remove('hidden');
 }
 
+function openMobNav(){
+  document.querySelector('.nav').classList.add('mob-open');
+  const ov = document.getElementById('mob-overlay');
+  if(ov){ ov.style.display='block'; setTimeout(()=>ov.classList.add('show'),10); }
+}
+function closeMobNav(){
+  document.querySelector('.nav').classList.remove('mob-open');
+  const ov = document.getElementById('mob-overlay');
+  if(ov){ ov.classList.remove('show'); setTimeout(()=>{ if(!ov.classList.contains('show')) ov.style.display='none'; },260); }
+}
+
+const _mobPageTitles = {
+  dashboard:'대시보드', receipt:'원료 입고', 'receipt-manual':'수동 입력',
+  'receipt-upload':'OCR 입력', 'receipt-ocr':'OCR 검토', 'receipt-done':'입고 완료',
+  stock:'재고 현황', ledger:'수불대장', ingodaejang:'입고대장',
+  production:'생산실적', plan:'생산계획', recipe:'레시피', device:'장비 관리',
+  'mat-master':'원재료 관리', 'semi-master':'반제품 관리', 'prod-master':'제품 관리',
+  'partner-master':'거래처 관리', 'process-master':'공정 관리',
+  shipment:'출하 관리', 'sales-dashboard':'영업 대시보드', 'sales-ledger':'영업 현황', statement:'거래명세서'
+};
+
 function goApp(page){
+  closeMobNav();
+  const mobTitle = document.getElementById('mob-page-title');
+  if(mobTitle) mobTitle.textContent = _mobPageTitles[page] || '';
+
   if(page === 'admin-users'){
     go('admin');
     loadAdminUsers();
