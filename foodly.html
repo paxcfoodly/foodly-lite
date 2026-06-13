@@ -275,16 +275,27 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 .done-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 
 @media(max-width:768px){
-  .nav{position:fixed;top:0;left:-100%;width:78%;max-width:260px;height:100%;z-index:200;transition:left .25s;box-shadow:4px 0 24px rgba(0,0,0,.2)}
-  .nav.mob-open{left:0}
+  /* 사이드바: 기본 숨김, 햄버거로 슬라이드인 */
+  .nav{
+    position:fixed !important;
+    top:0;left:0;
+    transform:translateX(-100%);
+    width:260px !important;
+    height:100% !important;
+    z-index:200;
+    transition:transform .25s ease;
+    box-shadow:none;
+  }
+  .nav.mob-open{transform:translateX(0);box-shadow:6px 0 28px rgba(0,0,0,.22)}
+  /* 메인 영역 전체 너비 차지 */
+  .app{overflow:hidden}
+  .main{width:100% !important;flex:none;display:flex;flex-direction:column;height:100svh;overflow:hidden}
   .mob-overlay{display:block}
   .mob-bar{display:flex}
-  .app{flex-direction:column;height:100svh}
-  .main{flex:1;overflow-y:auto;overflow-x:hidden}
   .page-head{padding:10px 16px;flex-wrap:wrap;gap:8px}
   .page-title{font-size:17px}
   .page-actions{flex-wrap:wrap}
-  .page-body{padding:12px 16px;gap:12px}
+  .page-body{padding:12px 16px;gap:12px;flex:1;overflow-y:auto}
   .grid2{grid-template-columns:1fr !important}
   .frow{grid-template-columns:1fr !important}
   .kgrid{grid-template-columns:1fr 1fr !important}
@@ -296,11 +307,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   .auth-right{padding:32px 20px}
   .done-btns{flex-direction:column;align-items:stretch}
   .done-btns .btn{width:100%}
-  /* 수동입고 하단 고정 버튼 */
   .receipt-sticky{display:flex !important}
   #app-receipt-manual .page-head .btn-primary{display:none !important}
   #app-receipt-manual .page-body{padding-bottom:76px !important}
-  /* 수동입고 2열 → 1열 */
   .receipt-form-grid{grid-template-columns:1fr !important}
 }
 @media(max-width:480px){
