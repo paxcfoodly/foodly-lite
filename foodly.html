@@ -879,10 +879,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="page-head"><div><div class="page-title">생산실적</div><div class="page-sub">제품 생산량 등록 · BOM 기반 원재료 자동 차감</div></div><div class="page-actions"></div></div>
       <div class="page-body">
         <div class="kgrid">
-          <div class="kpi"><div class="kl">오늘 생산 배치</div><div class="kv">6 <span class="ku">건</span></div><div class="ks">진행중 1 · 완료 5</div></div>
-          <div class="kpi"><div class="kl">오늘 총 생산량</div><div class="kv">1,240 <span class="ku">개</span></div><div class="ks up">▲ +8%</div></div>
-          <div class="kpi"><div class="kl">이번 주 양품률</div><div class="kv" style="color:var(--teal)">97.4 <span class="ku">%</span></div></div>
-          <div class="kpi"><div class="kl">자동 집계 비율</div><div class="kv">100 <span class="ku">%</span></div><div class="ks" style="color:var(--teal-dk)">모든 배치 장비 수신</div></div>
+          <div class="kpi"><div class="kl">조회 기간 배치 수</div><div class="kv" id="prod-kpi-count">— <span class="ku">건</span></div><div class="ks" id="prod-kpi-status">집계 중</div></div>
+          <div class="kpi"><div class="kl">총 생산량</div><div class="kv" id="prod-kpi-qty">— <span class="ku">개</span></div><div class="ks" id="prod-kpi-qty-sub"></div></div>
+          <div class="kpi"><div class="kl">양품률</div><div class="kv" id="prod-kpi-rate" style="color:var(--teal)">— <span class="ku">%</span></div></div>
+          <div class="kpi"><div class="kl">장비 자동 집계</div><div class="kv" id="prod-kpi-auto">— <span class="ku">%</span></div><div class="ks" id="prod-kpi-auto-sub"></div></div>
         </div>
         <!-- 장비 수집 생산량 카드 -->
         <div id="device-prod-card" class="card" style="display:none">
@@ -1190,42 +1190,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="page-head"><div><div class="page-title">레시피 관리</div><div class="page-sub">제품별 배합비율 · 생산 시 원료 자동 차감 기준</div></div><div class="page-actions"><button class="btn btn-primary btn-sm">+ 레시피 등록</button></div></div>
       <div class="page-body">
         <div class="kgrid">
-          <div class="kpi"><div class="kl">전체 레시피</div><div class="kv">8 <span class="ku">개</span></div><div class="ks">활성 6 · 초안 2</div></div>
-          <div class="kpi"><div class="kl">이번 달 생산 적용</div><div class="kv">5 <span class="ku">개</span></div><div class="ks">총 42회 생산</div></div>
-          <div class="kpi"><div class="kl">사용 원료 종류</div><div class="kv">12 <span class="ku">종</span></div></div>
-          <div class="kpi"><div class="kl">최근 수정</div><div class="kv" style="font-size:16px">식빵 v1.3</div><div class="ks">3일 전</div></div>
+          <div class="kpi"><div class="kl">전체 레시피</div><div class="kv" id="recipe-kpi-total">— <span class="ku">개</span></div><div class="ks" id="recipe-kpi-status">집계 중</div></div>
+          <div class="kpi"><div class="kl">활성 레시피</div><div class="kv" id="recipe-kpi-active">— <span class="ku">개</span></div></div>
+          <div class="kpi"><div class="kl">사용 원료 종류</div><div class="kv" id="recipe-kpi-mats">— <span class="ku">종</span></div></div>
+          <div class="kpi"><div class="kl">최근 수정</div><div class="kv" id="recipe-kpi-latest" style="font-size:14px">—</div></div>
         </div>
-        <div id="recipe-cards-container" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-          <div class="card" style="cursor:pointer" onmouseenter="this.style.borderColor='var(--teal)'" onmouseleave="this.style.borderColor='var(--gray-bd)'">
-            <div style="padding:14px 16px 10px;border-bottom:1px solid var(--gray-lt)">
-              <div style="display:flex;gap:6px;margin-bottom:8px"><span class="bdg b-ok">활성</span><span class="bdg b-purple">식빵류</span><span class="bdg b-warn">v1.3</span></div>
-              <div style="font-size:15px;font-weight:700">식빵</div><div class="mono">PRD-001</div>
-            </div>
-            <div style="padding:12px 16px;display:flex;flex-direction:column;gap:6px">
-              <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--gray)">기준 생산량</span><span style="font-weight:700">20 개</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--gray)">원료 종류</span><span style="font-weight:700">6 종</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--gray)">이번 달 생산</span><span style="font-weight:700">18회 · 22,400개</span></div>
-              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px"><span class="ing-chip">밀가루 1kg</span><span class="ing-chip">설탕 120g</span><span class="ing-chip">버터 80g</span><span class="ing-chip">달걀 2개</span><span class="ing-chip">+2종</span></div>
-            </div>
-            <div style="padding:10px 16px;border-top:1px solid var(--gray-lt);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--gray-md)">3일 전 수정</span><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm">편집</button><button class="btn btn-outline btn-sm">상세</button></div></div>
-          </div>
-          <div class="card" style="cursor:pointer" onmouseenter="this.style.borderColor='var(--teal)'" onmouseleave="this.style.borderColor='var(--gray-bd)'">
-            <div style="padding:14px 16px 10px;border-bottom:1px solid var(--gray-lt)">
-              <div style="display:flex;gap:6px;margin-bottom:8px"><span class="bdg b-ok">활성</span><span class="bdg b-purple">식빵류</span><span class="bdg b-gray">v1.1</span></div>
-              <div style="font-size:15px;font-weight:700">크루아상</div><div class="mono">PRD-002</div>
-            </div>
-            <div style="padding:12px 16px;display:flex;flex-direction:column;gap:6px">
-              <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--gray)">기준 생산량</span><span style="font-weight:700">30 개</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--gray)">원료 종류</span><span style="font-weight:700">7 종</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--gray)">이번 달 생산</span><span style="font-weight:700">12회 · 14,400개</span></div>
-              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px"><span class="ing-chip">밀가루 800g</span><span class="ing-chip">버터 300g</span><span class="ing-chip">우유 200ml</span><span class="ing-chip">+4종</span></div>
-            </div>
-            <div style="padding:10px 16px;border-top:1px solid var(--gray-lt);display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--gray-md)">12일 전 수정</span><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm">편집</button><button class="btn btn-outline btn-sm">상세</button></div></div>
-          </div>
-          <div class="card" style="cursor:pointer;border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:200px" onmouseenter="this.style.borderColor='var(--teal)'" onmouseleave="this.style.borderColor='var(--gray-bd)'">
-            <div style="text-align:center;color:var(--gray-md)"><div style="font-size:28px;margin-bottom:8px">+</div><div style="font-size:13px">새 레시피 등록</div></div>
-          </div>
-        </div>
+        <div id="recipe-cards-container" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div>
       </div>
     </div>
 
@@ -2246,6 +2216,24 @@ async function loadProductions() {
       <td>${statusMap[p.status]||''}</td>
       <td><button class="btn btn-ghost" style="padding:7px 14px;font-size:13px;white-space:nowrap" onclick="openEditProductionModal(${p.id})">수정</button></td>
     </tr>`).join('') : '<tr><td colspan="10" style="text-align:center;color:var(--gray-md);padding:24px">등록된 생산실적이 없습니다</td></tr>';
+
+  // KPI 업데이트
+  const totalQty   = data.reduce((s, p) => s + (p.produced_quantity || 0), 0);
+  const totalGood  = data.reduce((s, p) => s + (p.good_quantity || 0), 0);
+  const goodRate   = totalQty > 0 ? (totalGood / totalQty * 100).toFixed(1) : null;
+  const completed  = data.filter(p => p.status === 'completed').length;
+  const running    = data.filter(p => p.status === 'running').length;
+  const autoCount  = data.filter(p => p.input_method === 'device' || p.input_method === 'device_allocated').length;
+  const autoPct    = data.length > 0 ? Math.round(autoCount / data.length * 100) : null;
+
+  const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+  set('prod-kpi-count',    data.length ? `${data.length} <span class="ku">건</span>` : '— <span class="ku">건</span>');
+  set('prod-kpi-status',   data.length ? `완료 ${completed} · 진행중 ${running}` : '실적 없음');
+  set('prod-kpi-qty',      totalQty > 0 ? `${fmtQty(totalQty)} <span class="ku">개</span>` : '— <span class="ku">개</span>');
+  set('prod-kpi-qty-sub',  '');
+  set('prod-kpi-rate',     goodRate !== null ? `${goodRate} <span class="ku">%</span>` : '— <span class="ku">%</span>');
+  set('prod-kpi-auto',     autoPct !== null ? `${autoPct} <span class="ku">%</span>` : '— <span class="ku">%</span>');
+  set('prod-kpi-auto-sub', autoCount > 0 ? `장비 자동 수신 ${autoCount}건` : '');
 }
 
 // ── 원료 재고 API 로드
@@ -2309,6 +2297,18 @@ async function loadRecipes() {
     </div>`);
   cards.push(`<div class="card" style="cursor:pointer;border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:200px" onmouseenter="this.style.borderColor='var(--teal)'" onmouseleave="this.style.borderColor='var(--gray-bd)'"><div style="text-align:center;color:var(--gray-md)"><div style="font-size:28px;margin-bottom:8px">+</div><div style="font-size:13px">새 레시피 등록</div></div></div>`);
   container.innerHTML = cards.join('');
+
+  // 레시피 KPI 업데이트
+  const activeCount = data.filter(r => r.status === 'active').length;
+  const draftCount  = data.filter(r => r.status !== 'active').length;
+  const matSet = new Set(data.flatMap(r => r.ingredients.map(i => i.material_name)));
+  const latest = data.length ? data[data.length - 1].product_name : null;
+  const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+  set('recipe-kpi-total',  data.length ? `${data.length} <span class="ku">개</span>` : '— <span class="ku">개</span>');
+  set('recipe-kpi-status', data.length ? `활성 ${activeCount} · 초안 ${draftCount}` : '등록된 레시피 없음');
+  set('recipe-kpi-active', activeCount ? `${activeCount} <span class="ku">개</span>` : '— <span class="ku">개</span>');
+  set('recipe-kpi-mats',   matSet.size ? `${matSet.size} <span class="ku">종</span>` : '— <span class="ku">종</span>');
+  set('recipe-kpi-latest', latest || '—');
 }
 
 // ── 수불대장 초기화 (기본: 이번 달, 자동 조회)
