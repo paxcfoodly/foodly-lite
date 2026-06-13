@@ -600,6 +600,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
     <div class="nav-item" id="nav-plan" onclick="goApp('plan')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>생산계획
     </div>
+    <div class="nav-item" id="nav-saengsan-ilji" onclick="goApp('saengsan-ilji')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>생산일지
+    </div>
     <div class="nav-section">출고 · 매출</div>
     <div class="nav-item" id="nav-shipment" onclick="goApp('shipment')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>출고 등록
@@ -1010,6 +1013,49 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       </div>
     </div>
 
+    <!-- ── 생산일지 ── -->
+    <div id="app-saengsan-ilji" class="hidden">
+      <div class="page-head">
+        <div><div class="page-title">생산일지</div><div class="page-sub">월별 생산 이력 · 출력</div></div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="printSaengsanIlji()">PDF 출력</button>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="fbar" style="background:var(--white);border:1px solid var(--gray-bd);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px">
+          <select id="ilji-year-sel" class="finput" style="width:100px" onchange="loadSaengsanIlji()"></select>
+          <select id="ilji-month-sel" class="finput" style="width:80px" onchange="loadSaengsanIlji()"></select>
+          <button class="btn btn-primary btn-sm" onclick="loadSaengsanIlji()">조회</button>
+        </div>
+        <div id="ilji-print-area">
+          <div id="ilji-content">
+            <div style="background:var(--white);border:1px solid var(--gray-bd);border-radius:var(--radius);padding:24px">
+              <h2 id="ilji-title" style="font-size:22px;font-weight:900;text-align:center;margin:0 0 16px;letter-spacing:2px"></h2>
+              <table id="ilji-table" style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
+                <colgroup>
+                  <col style="width:9%"/><col style="width:22%"/><col style="width:14%"/>
+                  <col style="width:8%"/><col style="width:9%"/>
+                  <col style="width:11%"/><col style="width:27%"/>
+                </colgroup>
+                <thead>
+                  <tr style="background:#f0f0f0">
+                    <th style="border:1px solid #999;padding:7px 6px;text-align:center">생산일자</th>
+                    <th style="border:1px solid #999;padding:7px 6px;text-align:center">생산재품명</th>
+                    <th style="border:1px solid #999;padding:7px 6px;text-align:center">포장방법 및 단위</th>
+                    <th style="border:1px solid #999;padding:7px 6px;text-align:center">생산수량</th>
+                    <th style="border:1px solid #999;padding:7px 6px;text-align:center">작업인원</th>
+                    <th style="border:1px solid #999;padding:7px 6px;text-align:center">소비기한</th>
+                    <th style="border:1px solid #999;padding:7px 6px;text-align:center">특이사항</th>
+                  </tr>
+                </thead>
+                <tbody id="ilji-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══════════════ 출고 등록 ══════════════ -->
     <div id="app-shipment" class="hidden">
       <div class="page-head">
@@ -1320,7 +1366,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
                 </div>
               </div>
               <div class="frow"><div class="fl"><div class="fl-lbl">단가 (원)</div><input id="form-unit-price" class="finput" type="number" placeholder="0" style="text-align:right"/></div>
-                <div class="fl"><div class="fl-lbl">유통기한</div>
+                <div class="fl"><div class="fl-lbl">소비기한</div>
                   <div style="display:flex;gap:6px;flex-wrap:wrap">
                     <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(30)">+30일</button>
                     <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(60)">+60일</button>
@@ -1691,8 +1737,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 // ROUTING
 // ══════════════════════════════
 const allScreens = ['login','signup','onboard1','onboard2','onboard3','app','admin'];
-const allAppScreens = ['dashboard','receipt','receipt-upload','receipt-ocr','receipt-done','receipt-manual','stock','ledger','ingodaejang','production','plan','recipe','device','mat-master','semi-master','prod-master','partner-master','process-master','shipment','sales-dashboard','sales-ledger','statement'];
-const navMap = {dashboard:'nav-dashboard',receipt:'nav-receipt','receipt-upload':'nav-receipt','receipt-ocr':'nav-receipt','receipt-done':'nav-receipt','receipt-manual':'nav-receipt',stock:'nav-stock',ledger:'nav-ledger',ingodaejang:'nav-ingodaejang',production:'nav-production',plan:'nav-plan',recipe:'nav-recipe',device:'nav-device','mat-master':'nav-mat-master','semi-master':'nav-semi-master','prod-master':'nav-prod-master','partner-master':'nav-partner-master','process-master':'nav-process-master',shipment:'nav-shipment','sales-dashboard':'nav-sales-dashboard','sales-ledger':'nav-sales-ledger',statement:'nav-statement'};
+const allAppScreens = ['dashboard','receipt','receipt-upload','receipt-ocr','receipt-done','receipt-manual','stock','ledger','ingodaejang','production','plan','saengsan-ilji','recipe','device','mat-master','semi-master','prod-master','partner-master','process-master','shipment','sales-dashboard','sales-ledger','statement'];
+const navMap = {dashboard:'nav-dashboard',receipt:'nav-receipt','receipt-upload':'nav-receipt','receipt-ocr':'nav-receipt','receipt-done':'nav-receipt','receipt-manual':'nav-receipt',stock:'nav-stock',ledger:'nav-ledger',ingodaejang:'nav-ingodaejang',production:'nav-production',plan:'nav-plan','saengsan-ilji':'nav-saengsan-ilji',recipe:'nav-recipe',device:'nav-device','mat-master':'nav-mat-master','semi-master':'nav-semi-master','prod-master':'nav-prod-master','partner-master':'nav-partner-master','process-master':'nav-process-master',shipment:'nav-shipment','sales-dashboard':'nav-sales-dashboard','sales-ledger':'nav-sales-ledger',statement:'nav-statement'};
 
 function go(screen){
   allScreens.forEach(s=>{ const el=document.getElementById('screen-'+s); if(el) el.classList.add('hidden'); });
@@ -1715,7 +1761,7 @@ const _mobPageTitles = {
   dashboard:'대시보드', receipt:'원료 입고', 'receipt-manual':'수동 입력',
   'receipt-upload':'OCR 입력', 'receipt-ocr':'OCR 검토', 'receipt-done':'입고 완료',
   stock:'재고 현황', ledger:'수불대장', ingodaejang:'입고대장',
-  production:'생산실적', plan:'생산계획', recipe:'레시피', device:'장비 관리',
+  production:'생산실적', plan:'생산계획', 'saengsan-ilji':'생산일지', recipe:'레시피', device:'장비 관리',
   'mat-master':'원재료 관리', 'semi-master':'반제품 관리', 'prod-master':'제품 관리',
   'partner-master':'거래처 관리', 'process-master':'공정 관리',
   shipment:'출하 관리', 'sales-dashboard':'영업 대시보드', 'sales-ledger':'영업 현황', statement:'거래명세서'
@@ -2800,6 +2846,43 @@ function setExpiry(days) {
   if (el) el.value = d.toISOString().split('T')[0];
 }
 
+function _parseProdTime(dtStr) {
+  let date, h, m;
+  if (dtStr) {
+    const [datePart, timePart] = dtStr.split('T');
+    date = datePart;
+    h = parseInt(timePart.split(':')[0]);
+    m = Math.floor(parseInt(timePart.split(':')[1]) / 10) * 10;
+  } else {
+    const now = new Date();
+    date = now.toISOString().split('T')[0];
+    h = now.getHours();
+    m = Math.floor(now.getMinutes() / 10) * 10;
+  }
+  const ampm = h < 12 ? '오전' : '오후';
+  const hour12 = h % 12 || 12;
+  return { date, ampm, hour: hour12, min: m };
+}
+
+function _buildProdTime(prefix) {
+  const date = document.getElementById(prefix + '-date')?.value;
+  const ampm = document.getElementById(prefix + '-ampm')?.value;
+  const hour = parseInt(document.getElementById(prefix + '-hour')?.value || '12');
+  const min  = parseInt(document.getElementById(prefix + '-min')?.value || '0');
+  if (!date) return null;
+  let h24 = hour % 12;
+  if (ampm === '오후') h24 += 12;
+  return `${date}T${String(h24).padStart(2,'0')}:${String(min).padStart(2,'0')}`;
+}
+
+function setProdExpiry(days) {
+  const endDate = document.getElementById('prod-end-date')?.value;
+  const base = endDate ? new Date(endDate + 'T00:00:00') : new Date();
+  base.setDate(base.getDate() + days);
+  const el = document.getElementById('prod-expiry');
+  if (el) el.value = base.toISOString().split('T')[0];
+}
+
 function updateInspectLabel(name) {
   const nameMap = { packaging_ok: 'packaging', visual_ok: 'visual', judgment_ok: 'judgment' };
   const key = nameMap[name];
@@ -2991,8 +3074,11 @@ async function submitProduction() {
   const product_id = document.getElementById('prod-product-id')?.value;
   const produced   = document.getElementById('prod-produced')?.value;
   const defect     = document.getElementById('prod-defect')?.value;
-  const start_time = document.getElementById('prod-start')?.value;
-  const end_time   = document.getElementById('prod-end')?.value;
+  const start_time = _buildProdTime('prod-start');
+  const end_time   = _buildProdTime('prod-end');
+  const expiry_date = document.getElementById('prod-expiry')?.value;
+  const workers    = document.getElementById('prod-workers')?.value;
+  const note       = document.getElementById('prod-note')?.value;
   if (!product_id || !produced) { alert('제품과 생산량은 필수입니다.'); return; }
   const body = {
     finished_product_id: parseInt(product_id),
@@ -3000,6 +3086,9 @@ async function submitProduction() {
     defect_quantity: defect ? parseFloat(defect) : 0,
     start_time: start_time || null,
     end_time: end_time || null,
+    expiry_date: expiry_date || null,
+    workers: workers || null,
+    note: note || null,
   };
   let result;
   if (editId) {
@@ -3043,7 +3132,8 @@ async function openEditProductionModal(prodId) {
   const prod = await apiFetch(`/productions/${prodId}`);
   if (!prod) return;
   await openProductionModal(prod.finished_product_id, prod.produced_quantity, null, prod.defect_quantity,
-                            prod.start_time, prod.end_time, prodId);
+                            prod.start_time, prod.end_time, prodId,
+                            prod.expiry_date, prod.workers, prod.note);
 }
 
 // ── AI 추천 모달
@@ -3100,7 +3190,7 @@ function applyRecommendation(recipeId, qty, good, defect) {
   openProductionModal(recipeId, qty, null, defect);
 }
 
-async function openProductionModal(productId, qty, good, defect, startTime, endTime, editId) {
+async function openProductionModal(productId, qty, good, defect, startTime, endTime, editId, expiryDate, workers, note) {
   const products = await apiFetch('/master/products?status=active');
   if (!products) return;
   let modal = document.getElementById('prod-modal');
@@ -3110,10 +3200,23 @@ async function openProductionModal(productId, qty, good, defect, startTime, endT
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;display:flex;align-items:center;justify-content:center';
     document.body.appendChild(modal);
   }
-  const now = new Date().toISOString().slice(0,16);
   const isEdit = !!editId;
+  const st = _parseProdTime(startTime);
+  const et = _parseProdTime(endTime);
+  const _ampmOpts = (sel) => ['오전','오후'].map(v=>`<option${v===sel?' selected':''}>${v}</option>`).join('');
+  const _hourOpts = (sel) => Array.from({length:12},(_,i)=>i+1).map(h=>`<option${h===sel?' selected':''}>${h}</option>`).join('');
+  const _minOpts  = (sel) => [0,10,20,30,40,50].map(m=>`<option value="${m}"${m===sel?' selected':''}>${String(m).padStart(2,'0')}</option>`).join('');
+  const _timeSel = (pfx, p) => `
+    <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+      <input id="${pfx}-date" class="finput" type="date" value="${p.date}" style="width:128px"/>
+      <select id="${pfx}-ampm" class="finput" style="width:68px">${_ampmOpts(p.ampm)}</select>
+      <select id="${pfx}-hour" class="finput" style="width:52px">${_hourOpts(p.hour)}</select>
+      <span style="font-size:12px;color:var(--gray)">시</span>
+      <select id="${pfx}-min" class="finput" style="width:52px">${_minOpts(p.min)}</select>
+      <span style="font-size:12px;color:var(--gray)">분</span>
+    </div>`;
   modal.innerHTML = `
-    <div style="background:#fff;border-radius:14px;padding:28px 32px;width:480px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.15)">
+    <div style="background:#fff;border-radius:14px;padding:28px 32px;width:520px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.15)">
       <input type="hidden" id="prod-edit-id" value="${editId||''}"/>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
         <div><div style="font-size:18px;font-weight:700">${isEdit ? '생산실적 수정' : '생산실적 입력'}</div>
@@ -3131,10 +3234,20 @@ async function openProductionModal(productId, qty, good, defect, startTime, endT
         <div class="fl"><div class="fl-lbl">생산량 <span class="req">*</span></div><input id="prod-produced" class="finput" type="number" value="${qty||''}" placeholder="0" oninput="updateBOMPreviewQty()"/></div>
         <div class="fl"><div class="fl-lbl">불량수</div><input id="prod-defect" class="finput" type="number" value="${defect!=null?defect:0}" placeholder="0"/></div>
       </div>
+      <div class="fl" style="margin-bottom:8px"><div class="fl-lbl">시작 시간</div>${_timeSel('prod-start', st)}</div>
+      <div class="fl" style="margin-bottom:8px"><div class="fl-lbl">종료 시간</div>${_timeSel('prod-end', et)}</div>
       <div class="frow">
-        <div class="fl"><div class="fl-lbl">시작 시간</div><input id="prod-start" class="finput" type="datetime-local" value="${startTime||now}"/></div>
-        <div class="fl"><div class="fl-lbl">종료 시간</div><input id="prod-end" class="finput" type="datetime-local" value="${endTime||now}"/></div>
+        <div class="fl"><div class="fl-lbl">소비기한</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="setProdExpiry(30)">+30일</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="setProdExpiry(60)">+60일</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="setProdExpiry(90)">+90일</button>
+            <input id="prod-expiry" class="finput" type="date" value="${expiryDate||''}" style="flex:1;min-width:128px"/>
+          </div>
+        </div>
+        <div class="fl"><div class="fl-lbl">작업인원</div><input id="prod-workers" class="finput" type="text" value="${workers||''}" placeholder="예: 3명 또는 홍길동, 김철수"/></div>
       </div>
+      <div class="fl"><div class="fl-lbl">특이사항</div><input id="prod-note" class="finput" type="text" value="${note||''}" placeholder="특이사항 입력"/></div>
       <div style="display:flex;gap:8px;margin-top:12px">
         <button class="btn btn-primary" style="flex:1" onclick="submitProduction()">${isEdit ? '수정 저장' : '저장 (원재료 차감)'}</button>
         <button class="btn btn-ghost" onclick="closeProductionModal()">취소</button>
@@ -3384,9 +3497,10 @@ window.goApp = function(page) {
   else if (page === 'prod-master')  loadProductMaster();
   else if (page === 'partner-master') loadPartnerMaster();
   else if (page === 'process-master') loadProcessMaster();
-  else if (page === 'plan')         initPlanView();
-  else if (page === 'ledger')       initLedger();
-  else if (page === 'ingodaejang')  initIngodaejang();
+  else if (page === 'plan')             initPlanView();
+  else if (page === 'saengsan-ilji')    initSaengsanIlji();
+  else if (page === 'ledger')           initLedger();
+  else if (page === 'ingodaejang')      initIngodaejang();
   else if (page === 'device')       loadDevices();
 };
 
@@ -4514,7 +4628,7 @@ async function openBOMModal(productId, productName) {
         </div>
       </div>
       <div class="fl" style="margin-bottom:10px"><div class="fl-lbl">비고</div><input id="bom-note" class="finput" placeholder=""/></div>
-      <button class="btn btn-primary btn-sm" onclick="addBOMItem(${productId})">+ 추가</button>
+      <button class="btn btn-primary btn-sm" onclick="addBOMItem(${productId})">저장</button>
     </div>`;
 
   // 품목 목록 저장 for select switch (자기 자신 제외)
@@ -4840,7 +4954,7 @@ async function openSemiBOMModal(semiId, semiName) {
         </div>
       </div>
       <div class="fl" style="margin-bottom:10px"><div class="fl-lbl">비고</div><input id="semi-bom-note" class="finput"/></div>
-      <button class="btn btn-primary btn-sm" onclick="addSemiBOMItem(${semiId})">+ 추가</button>
+      <button class="btn btn-primary btn-sm" onclick="addSemiBOMItem(${semiId})">저장</button>
     </div>`;
 
   inner._semiMaterials = materials || [];
@@ -5060,6 +5174,140 @@ async function deleteProductProcess(productId, ppId) {
         <td><button class="btn btn-danger btn-sm" onclick="deleteProductProcess(${productId},${pp.id})">삭제</button></td>
       </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--gray-md);padding:16px">배정된 공정이 없습니다</td></tr>';
   }
+}
+
+// ══════════════════════════════════════════════════════
+// 생산일지
+// ══════════════════════════════════════════════════════
+function initSaengsanIlji() {
+  const now = new Date();
+  const yearSel = document.getElementById('ilji-year-sel');
+  const monthSel = document.getElementById('ilji-month-sel');
+  if (yearSel && !yearSel.options.length) {
+    const cy = now.getFullYear();
+    for (let y = cy - 2; y <= cy + 1; y++) {
+      yearSel.add(new Option(y + '년', y, y === cy, y === cy));
+    }
+  }
+  if (monthSel && !monthSel.options.length) {
+    for (let m = 1; m <= 12; m++) {
+      monthSel.add(new Option(m + '월', m, m === now.getMonth() + 1, m === now.getMonth() + 1));
+    }
+  }
+  loadSaengsanIlji();
+}
+
+let _iljiData = null;
+
+async function loadSaengsanIlji() {
+  const year  = document.getElementById('ilji-year-sel')?.value;
+  const month = document.getElementById('ilji-month-sel')?.value;
+  const titleEl = document.getElementById('ilji-title');
+  const tbody   = document.getElementById('ilji-tbody');
+  if (!year || !month || !titleEl || !tbody) return;
+
+  const TOTAL = 20;
+  const _td = (content, align) =>
+    `<td style="border:1px solid #999;padding:6px 8px;height:28px${align ? ';text-align:'+align : ''}">${content}</td>`;
+  const _emptyRow = () =>
+    `<tr>${_td('')}${_td('')}${_td('')}${_td('')}${_td('')}${_td('')}${_td('')}</tr>`;
+
+  titleEl.textContent = `( ${month}월 ) 생산일지`;
+  tbody.innerHTML = Array.from({length: TOTAL}, _emptyRow).join('');
+
+  const data = await apiFetch(`/productions/saengsan-ilji?year=${year}&month=${month}`);
+  if (!data) return;
+  _iljiData = data;
+
+  const rows = data.rows.slice(0, TOTAL);
+  const filled = rows.map(r =>
+    `<tr>
+      ${_td(r.production_date, 'center')}
+      ${_td(r.product_name)}
+      ${_td(r.product_unit, 'center')}
+      ${_td(r.produced_quantity != null ? r.produced_quantity.toLocaleString() : '', 'right')}
+      ${_td(r.workers, 'center')}
+      ${_td(r.expiry_date, 'center')}
+      ${_td(r.note)}
+    </tr>`).join('');
+  const pad = Array.from({length: Math.max(0, TOTAL - rows.length)}, _emptyRow).join('');
+  tbody.innerHTML = filled + pad;
+}
+
+function printSaengsanIlji() {
+  const titleText = document.getElementById('ilji-title')?.textContent || '';
+  if (!titleText) { alert('먼저 조회하세요.'); return; }
+
+  const TOTAL = 20;
+  const company = localStorage.getItem('foodly_company') || '';
+  const bizNum  = localStorage.getItem('foodly_biz_number') || '';
+  const rows = (_iljiData?.rows || []).slice(0, TOTAL);
+
+  // 출력용 셀: overflow 없이 내용 그대로 표시
+  const _pt = (content, style='') =>
+    `<td style="border:1px solid #333;padding:5px 6px;${style}">${content || ''}</td>`;
+  const NW = 'white-space:nowrap;';   // 줄바꿈 금지 (날짜·숫자 컬럼)
+
+  const filledRows = rows.map(r =>
+    `<tr>
+      ${_pt(r.production_date,  NW+'text-align:center')}
+      ${_pt(r.product_name)}
+      ${_pt(r.product_unit,     NW+'text-align:center')}
+      ${_pt(r.produced_quantity != null ? r.produced_quantity.toLocaleString() : '', NW+'text-align:right')}
+      ${_pt(r.workers,          NW+'text-align:center')}
+      ${_pt(r.expiry_date,      NW+'text-align:center')}
+      ${_pt(r.note)}
+    </tr>`).join('');
+
+  const padRows = Array.from({length: Math.max(0, TOTAL - rows.length)}, () =>
+    `<tr>
+      ${_pt('','height:22px')}${_pt('')}${_pt('')}${_pt('')}${_pt('')}${_pt('')}${_pt('')}
+    </tr>`).join('');
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>생산일지</title>
+    <style>
+      *{box-sizing:border-box}
+      body{font-family:'Malgun Gothic',sans-serif;font-size:11px;margin:12mm 12mm 8mm}
+      table{border-collapse:collapse;width:100%;table-layout:fixed}
+      colgroup col.c-date{width:14%}
+      colgroup col.c-name{width:22%}
+      colgroup col.c-pkg {width:16%}
+      colgroup col.c-qty {width:9%}
+      colgroup col.c-wkr {width:10%}
+      colgroup col.c-exp {width:14%}
+      colgroup col.c-note{width:15%}
+      th{border:1px solid #333;padding:6px 4px;background:#f0f0f0;text-align:center;word-break:keep-all}
+      td{border:1px solid #333;padding:5px 6px}
+      tr{height:22px}
+      .doc-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px}
+      .doc-company{font-size:13px;font-weight:700;line-height:1.6}
+      .doc-biz{font-size:10px;color:#555}
+      h1{font-size:22px;font-weight:900;text-align:center;margin:8px 0 12px;letter-spacing:2px}
+      @page{size:A4 portrait;margin:0}
+      @media print{body{margin:12mm 12mm 8mm}}
+    </style></head><body>
+    <div class="doc-top">
+      <div>
+        ${company ? `<div class="doc-company">${company}</div>` : ''}
+        ${bizNum  ? `<div class="doc-biz">사업자등록번호: ${bizNum}</div>` : ''}
+      </div>
+    </div>
+    <h1>${titleText}</h1>
+    <table>
+      <colgroup>
+        <col class="c-date"/><col class="c-name"/><col class="c-pkg"/>
+        <col class="c-qty"/><col class="c-wkr"/><col class="c-exp"/><col class="c-note"/>
+      </colgroup>
+      <thead><tr>
+        <th>생산일자</th><th>생산재품명</th><th>포장방법 및 단위</th>
+        <th>생산수량</th><th>작업인원</th><th>소비기한</th><th>특이사항</th>
+      </tr></thead>
+      <tbody>${filledRows}${padRows}</tbody>
+    </table>
+  </body></html>`);
+  w.document.close();
+  w.print();
 }
 
 // ══════════════════════════════════════════════════════

@@ -363,6 +363,8 @@ class ProductionCreate(BaseModel):
     input_method: str = "manual"
     status: str = "completed"
     note: Optional[str] = None
+    expiry_date: Optional[str] = None
+    workers: Optional[str] = None
 
 class ProductionPlanCreate(BaseModel):
     product_id: int
@@ -1119,6 +1121,48 @@ def production_bom_preview(product_id: int, qty: float, db: Session = Depends(ge
                            "unit": mat.unit, "deduct_qty": round(amt, 3)})
     return result
 
+@app.get("/api/productions/saengsan-ilji")
+def get_saengsan_ilji(
+    year: int,
+    month: int,
+    db: Session = Depends(get_db)
+):
+    import calendar
+    start = datetime(year, month, 1)
+    _, last_day = calendar.monthrange(year, month)
+    end = datetime(year, month, last_day, 23, 59, 59)
+
+    prods = db.query(Production).filter(
+        Production.user_id == uid(),
+        Production.start_time >= start,
+        Production.start_time <= end,
+    ).order_by(Production.start_time).all()
+
+    rows = []
+    for p in prods:
+        if p.finished_product_id and p.finished_product:
+            product_name = p.finished_product.name
+            product_unit = p.finished_product.unit
+        elif p.recipe:
+            product_name = p.recipe.product_name
+            product_unit = p.recipe.base_unit
+        else:
+            product_name = ""
+            product_unit = ""
+        rows.append({
+            "id": p.id,
+            "production_date": p.start_time.strftime("%Y-%m-%d") if p.start_time else "",
+            "product_name": product_name,
+            "product_unit": product_unit,
+            "produced_quantity": p.produced_quantity,
+            "workers": p.workers or "",
+            "expiry_date": p.expiry_date.strftime("%Y-%m-%d") if p.expiry_date else "",
+            "note": p.note or "",
+        })
+
+    return {"year": year, "month": month, "rows": rows}
+
+
 @app.get("/api/debug/semi-bom")
 def debug_semi_bom(semi_id: int, qty: float, db: Session = Depends(get_db)):
     semi = db.query(SemiProduct).get(semi_id)
@@ -1154,6 +1198,8 @@ def get_production(prod_id: int, db: Session = Depends(get_db)):
         "start_time": p.start_time.strftime("%Y-%m-%dT%H:%M") if p.start_time else None,
         "end_time": p.end_time.strftime("%Y-%m-%dT%H:%M") if p.end_time else None,
         "note": p.note, "status": p.status, "input_method": p.input_method,
+        "expiry_date": p.expiry_date.strftime("%Y-%m-%d") if p.expiry_date else None,
+        "workers": p.workers,
     }
 
 
@@ -1164,6 +1210,8 @@ class ProductionUpdate(BaseModel):
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     note: Optional[str] = None
+    expiry_date: Optional[str] = None
+    workers: Optional[str] = None
 
 
 @app.patch("/api/productions/{prod_id}")
@@ -1196,6 +1244,9 @@ def update_production(prod_id: int, data: ProductionUpdate, db: Session = Depend
     if data.end_time is not None:
         prod.end_time = datetime.fromisoformat(data.end_time) if data.end_time else None
     if data.note is not None: prod.note = data.note
+    if data.expiry_date is not None:
+        prod.expiry_date = datetime.fromisoformat(data.expiry_date) if data.expiry_date else None
+    if data.workers is not None: prod.workers = data.workers
 
     prod.good_quantity = (new_qty or 0) - new_defect
 
@@ -1236,6 +1287,8 @@ def create_production(data: ProductionCreate, db: Session = Depends(get_db)):
         input_method=data.input_method,
         status=data.status,
         note=data.note,
+        expiry_date=datetime.fromisoformat(data.expiry_date) if data.expiry_date else None,
+        workers=data.workers,
         user_id=uid(),
     )
     db.add(prod)

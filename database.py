@@ -350,6 +350,8 @@ class Production(Base):
     input_method = Column(String, default="manual")
     status = Column(String, default="completed")
     note = Column(Text)
+    expiry_date = Column(DateTime)
+    workers = Column(String)
     user_id = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -505,6 +507,9 @@ def migrate_db():
         "ALTER TABLE receipts ADD COLUMN confirmer TEXT",
         # 부적합 조치사항
         "ALTER TABLE receipt_nonconformances ADD COLUMN action TEXT",
+        # 생산일지 필드
+        "ALTER TABLE productions ADD COLUMN expiry_date DATETIME",
+        "ALTER TABLE productions ADD COLUMN workers TEXT",
         # 검사 담당자 테이블 생성은 create_all로 처리
     ]
     with engine.connect() as conn:
