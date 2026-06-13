@@ -1918,8 +1918,16 @@ setInterval(()=>{
   }
 }, 300000);
 
+// ══════════════════════════════════════════════════════
+// API 연동 레이어
+// ══════════════════════════════════════════════════════
+const API = '/api';
+
+// 차트 race condition 방지: initDashChart를 no-op으로 교체
+initDashChart = function() {};
+
 // ══════════════════════════════
-// INIT
+// INIT  (API 상수 정의 이후에 실행)
 // ══════════════════════════════
 (function initAuth(){
   const token = localStorage.getItem('foodly_token');
@@ -1928,15 +1936,6 @@ setInterval(()=>{
   else if(token && role === 'user') { goApp('dashboard'); }
   else go('login');
 })();
-
-// ══════════════════════════════════════════════════════
-// API 연동 레이어
-// ══════════════════════════════════════════════════════
-const API = 'http://localhost:8000/api';
-
-// ① 차트 race condition 방지: initDashChart를 no-op으로 교체
-//    (loadDashboard가 API 데이터로 차트를 직접 그리므로 원본 함수 불필요)
-initDashChart = function() {};
 
 async function apiFetch(path, options={}) {
   try {
