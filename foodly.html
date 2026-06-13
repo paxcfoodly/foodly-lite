@@ -1269,57 +1269,73 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
         <div id="receipt-no-material-warn" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:12px;color:#856404;font-size:13px">
           ⚠ 등록된 원재료가 없습니다. 먼저 <a href="javascript:void(0)" onclick="goApp('mat-master')" style="color:var(--teal);font-weight:700">원재료 관리</a>에서 원재료를 등록해 주세요.
         </div>
-        <div class="card"><div class="card-head"><div class="card-title">입고 정보 입력</div></div><div class="card-body" style="display:flex;flex-direction:column;gap:12px">
-          <div class="frow"><div class="fl"><div class="fl-lbl">공급업체</div><select id="form-supplier-id"><option value="">-- 선택 --</option></select></div><div class="fl"><div class="fl-lbl">납품일자 <span class="req">*</span></div><input id="form-delivery-date" class="finput" type="date"/></div></div>
-          <div class="frow">
-            <div class="fl"><div class="fl-lbl">원료명 <span class="req">*</span></div><select id="form-material-id"><option value="">-- 선택 --</option></select></div>
-            <div class="fl"><div class="fl-lbl">수량 <span class="req">*</span></div>
-              <div style="display:flex;gap:6px">
-                <input id="form-quantity" class="finput" type="number" placeholder="0" style="text-align:right;flex:1"/>
-                <select id="form-unit" class="finput" style="width:76px">
-                  <option>kg</option><option>g</option><option>L</option><option>ml</option><option>ea</option><option>box</option><option>pk</option>
-                </select>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+          <!-- 입고 정보 -->
+          <div class="card"><div class="card-head"><div class="card-title">입고 정보 입력</div></div><div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+            <div class="frow"><div class="fl"><div class="fl-lbl">공급업체</div><select id="form-supplier-id"><option value="">-- 선택 --</option></select></div><div class="fl"><div class="fl-lbl">납품일자 <span class="req">*</span></div><input id="form-delivery-date" class="finput" type="date"/></div></div>
+            <div class="frow">
+              <div class="fl"><div class="fl-lbl">원료명 <span class="req">*</span></div><select id="form-material-id"><option value="">-- 선택 --</option></select></div>
+              <div class="fl"><div class="fl-lbl">수량 <span class="req">*</span></div>
+                <div style="display:flex;gap:6px">
+                  <input id="form-quantity" class="finput" type="number" placeholder="0" style="text-align:right;flex:1"/>
+                  <select id="form-unit" class="finput" style="width:76px">
+                    <option>kg</option><option>g</option><option>L</option><option>ml</option><option>ea</option><option>box</option><option>pk</option>
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="frow"><div class="fl"><div class="fl-lbl">단가 (원)</div><input id="form-unit-price" class="finput" type="number" placeholder="0" style="text-align:right"/></div>
-            <div class="fl"><div class="fl-lbl">유통기한</div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap">
-                <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(30)">+30일</button>
-                <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(60)">+60일</button>
-                <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(90)">+90일</button>
-                <input id="form-expiry-date" class="finput" type="date" style="flex:1;min-width:130px"/>
+            <div class="frow"><div class="fl"><div class="fl-lbl">단가 (원)</div><input id="form-unit-price" class="finput" type="number" placeholder="0" style="text-align:right"/></div>
+              <div class="fl"><div class="fl-lbl">유통기한</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(30)">+30일</button>
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(60)">+60일</button>
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(90)">+90일</button>
+                  <input id="form-expiry-date" class="finput" type="date" style="flex:1;min-width:130px"/>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="fl"><div class="fl-lbl">로트번호</div><input id="form-lot-number" class="finput" placeholder="LOT 번호 입력"/></div>
-        </div></div>
-        <div class="card"><div class="card-head"><div class="card-title">입고검사</div></div><div class="card-body" style="display:flex;flex-direction:column;gap:14px">
-          <div class="frow">
-            <div class="fl"><div class="fl-lbl">포장상태</div>
-              <div style="display:flex;gap:16px;align-items:center;padding:8px 0">
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="packaging_ok" value="true"/> 적합</label>
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="packaging_ok" value="false"/> 부적합</label>
+            <div class="fl"><div class="fl-lbl">로트번호</div><input id="form-lot-number" class="finput" placeholder="LOT 번호 입력"/></div>
+          </div></div>
+          <!-- 입고 검사 -->
+          <div class="card"><div class="card-head"><div class="card-title">입고 검사</div></div><div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div class="fl"><div class="fl-lbl">포장상태</div>
+                <div style="display:flex;gap:0;border:1px solid var(--gray-bd);border-radius:8px;overflow:hidden;margin-top:4px">
+                  <label id="lbl-packaging-ok" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;cursor:pointer;background:var(--teal-lt);color:var(--teal);font-weight:600;font-size:13px;transition:all .15s">
+                    <input type="radio" name="packaging_ok" value="true" checked style="display:none" onchange="updateInspectLabel('packaging_ok')"/> ✓ 적합
+                  </label>
+                  <label id="lbl-packaging-ng" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;cursor:pointer;background:var(--white);color:var(--gray);font-size:13px;border-left:1px solid var(--gray-bd);transition:all .15s">
+                    <input type="radio" name="packaging_ok" value="false" style="display:none" onchange="updateInspectLabel('packaging_ok')"/> 부적합
+                  </label>
+                </div>
+              </div>
+              <div class="fl"><div class="fl-lbl">육안검사</div>
+                <div style="display:flex;gap:0;border:1px solid var(--gray-bd);border-radius:8px;overflow:hidden;margin-top:4px">
+                  <label id="lbl-visual-ok" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;cursor:pointer;background:var(--teal-lt);color:var(--teal);font-weight:600;font-size:13px;transition:all .15s">
+                    <input type="radio" name="visual_ok" value="true" checked style="display:none" onchange="updateInspectLabel('visual_ok')"/> ✓ 적합
+                  </label>
+                  <label id="lbl-visual-ng" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;cursor:pointer;background:var(--white);color:var(--gray);font-size:13px;border-left:1px solid var(--gray-bd);transition:all .15s">
+                    <input type="radio" name="visual_ok" value="false" style="display:none" onchange="updateInspectLabel('visual_ok')"/> 부적합
+                  </label>
+                </div>
+              </div>
+              <div class="fl"><div class="fl-lbl">최종 판정</div>
+                <div style="display:flex;gap:0;border:1px solid var(--gray-bd);border-radius:8px;overflow:hidden;margin-top:4px">
+                  <label id="lbl-judgment-ok" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;cursor:pointer;background:var(--teal-lt);color:var(--teal);font-weight:600;font-size:13px;transition:all .15s">
+                    <input type="radio" name="judgment_ok" value="true" checked style="display:none" onchange="updateInspectLabel('judgment_ok')"/> ✓ 적합
+                  </label>
+                  <label id="lbl-judgment-ng" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;cursor:pointer;background:var(--white);color:var(--gray);font-size:13px;border-left:1px solid var(--gray-bd);transition:all .15s">
+                    <input type="radio" name="judgment_ok" value="false" style="display:none" onchange="updateInspectLabel('judgment_ok')"/> 부적합
+                  </label>
+                </div>
               </div>
             </div>
-            <div class="fl"><div class="fl-lbl">육안검사</div>
-              <div style="display:flex;gap:16px;align-items:center;padding:8px 0">
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="visual_ok" value="true"/> 적합</label>
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="visual_ok" value="false"/> 부적합</label>
-              </div>
+            <div class="frow">
+              <div class="fl"><div class="fl-lbl">검사자</div><input id="form-inspector" class="finput" placeholder="담당자명"/></div>
+              <div class="fl"><div class="fl-lbl">확인자</div><input id="form-confirmer" class="finput" placeholder="확인자명"/></div>
             </div>
-            <div class="fl"><div class="fl-lbl">판정</div>
-              <div style="display:flex;gap:16px;align-items:center;padding:8px 0">
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="judgment_ok" value="true"/> 적합</label>
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="judgment_ok" value="false"/> 부적합</label>
-              </div>
-            </div>
-          </div>
-          <div class="frow">
-            <div class="fl"><div class="fl-lbl">담당자</div><input id="form-inspector" class="finput" placeholder="담당자명"/></div>
-            <div class="fl"><div class="fl-lbl">확인자</div><input id="form-confirmer" class="finput" placeholder="확인자명"/></div>
-          </div>
-        </div></div>
+          </div></div>
+        </div>
       </div>
     </div>
 
@@ -2615,12 +2631,37 @@ async function populateReceiptForm() {
   const today = new Date().toISOString().split('T')[0];
   const ddEl = document.getElementById('form-delivery-date');
   if (ddEl && !ddEl.value) ddEl.value = today;
+  // 검사 항목 기본값 초기화
+  resetInspectLabels();
 }
 
 function setExpiry(days) {
   const d = new Date(); d.setDate(d.getDate() + days);
   const el = document.getElementById('form-expiry-date');
   if (el) el.value = d.toISOString().split('T')[0];
+}
+
+function updateInspectLabel(name) {
+  const nameMap = { packaging_ok: 'packaging', visual_ok: 'visual', judgment_ok: 'judgment' };
+  const key = nameMap[name];
+  const val = document.querySelector(`input[name="${name}"]:checked`)?.value;
+  const okLbl = document.getElementById(`lbl-${key}-ok`);
+  const ngLbl = document.getElementById(`lbl-${key}-ng`);
+  if (!okLbl || !ngLbl) return;
+  if (val === 'true') {
+    okLbl.style.background = 'var(--teal-lt)'; okLbl.style.color = 'var(--teal)'; okLbl.style.fontWeight = '600';
+    ngLbl.style.background = 'var(--white)';   ngLbl.style.color = 'var(--gray)'; ngLbl.style.fontWeight = '400';
+  } else {
+    okLbl.style.background = 'var(--white)';   okLbl.style.color = 'var(--gray)'; okLbl.style.fontWeight = '400';
+    ngLbl.style.background = '#fff5f5';        ngLbl.style.color = '#c53030';     ngLbl.style.fontWeight = '600';
+  }
+}
+
+function resetInspectLabels() {
+  ['packaging_ok', 'visual_ok', 'judgment_ok'].forEach(name => {
+    const r = document.querySelector(`input[name="${name}"][value="true"]`);
+    if (r) { r.checked = true; updateInspectLabel(name); }
+  });
 }
 
 async function submitReceipt() {
