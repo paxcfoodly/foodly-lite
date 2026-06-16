@@ -113,6 +113,8 @@ def serve_html():
 
 @app.on_event("startup")
 def startup():
+    db_url = os.environ.get("DATABASE_URL", "sqlite:///./foodly.db")
+    print(f"[STARTUP] DATABASE_URL = {db_url[:40]}...")
     create_tables()
     from seed import seed
     seed()
