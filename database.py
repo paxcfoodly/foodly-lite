@@ -1,6 +1,6 @@
 from sqlalchemy import (
     create_engine, Column, Integer, String, Float,
-    DateTime, ForeignKey, Text, Boolean, text
+    DateTime, ForeignKey, Text, Boolean, text, UniqueConstraint
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime, timedelta
@@ -102,8 +102,9 @@ class MaterialSupplier(Base):
 
 class SemiProduct(Base):
     __tablename__ = "semi_products"
+    __table_args__ = (UniqueConstraint('user_id', 'code', name='uq_semi_products_user_code'),)
     id = Column(Integer, primary_key=True, index=True)
-    code = Column(String, unique=True)
+    code = Column(String)
     name = Column(String, nullable=False)
     category = Column(String)
     unit = Column(String, default="kg")
@@ -125,8 +126,9 @@ class SemiProduct(Base):
 
 class FinishedProduct(Base):
     __tablename__ = "finished_products"
+    __table_args__ = (UniqueConstraint('user_id', 'code', name='uq_finished_products_user_code'),)
     id = Column(Integer, primary_key=True, index=True)
-    code = Column(String, unique=True)
+    code = Column(String)
     name = Column(String, nullable=False)
     category = Column(String)
     unit = Column(String, default="ea")
@@ -455,10 +457,68 @@ def ensure_admin(db):
         db.commit()
 
 
+def _drop_legacy_code_unique_sqlite(conn, table):
+    """semi_products/finished_products.code에 걸려있던 전체 테넌트 공용 UNIQUE를
+    user_id+code 조합 UNIQUE로 교체. SQLite는 ALTER TABLE로 인라인 UNIQUE를
+    제거할 수 없어 테이블을 재생성한다. 이미 마이그레이션됐으면 아무 것도 안 함."""
+    idx_rows = conn.execute(text(f"PRAGMA index_list('{table}')")).fetchall()
+    legacy_idx = None
+    for idx in idx_rows:
+        name, is_unique, origin = idx[1], idx[2], idx[3]
+        if not is_unique or origin != 'u':
+            continue
+        cols = [c[2] for c in conn.execute(text(f"PRAGMA index_info('{name}')")).fetchall()]
+        if cols == ['code']:
+            legacy_idx = name
+            break
+    if not legacy_idx:
+        return  # 이미 마이그레이션됨 (또는 신규 DB)
+
+    col_names = [c[1] for c in conn.execute(text(f"PRAGMA table_info('{table}')")).fetchall()]
+    col_list = ", ".join(col_names)
+
+    conn.execute(text(f"ALTER TABLE {table} RENAME TO {table}_legacy"))
+    # id 등 명시적으로 이름 붙은 인덱스는 RENAME을 따라가지 않아 새 테이블 생성 시
+    # 이름이 충돌난다. legacy 테이블은 곧 삭제되므로 먼저 제거해둔다.
+    for idx in conn.execute(text(f"PRAGMA index_list('{table}_legacy')")).fetchall():
+        idx_name, _, idx_origin = idx[1], idx[2], idx[3]
+        if idx_origin == 'c':
+            conn.execute(text(f"DROP INDEX IF EXISTS {idx_name}"))
+    Base.metadata.tables[table].create(bind=conn)
+    conn.execute(text(f"INSERT INTO {table} ({col_list}) SELECT {col_list} FROM {table}_legacy"))
+    conn.execute(text(f"DROP TABLE {table}_legacy"))
+
+
+def _migrate_postgres():
+    """code UNIQUE 제약을 전체 테넌트 공용 → user_id+code 조합으로 교체."""
+    with engine.connect() as conn:
+        for table in ("semi_products", "finished_products"):
+            try:
+                conn.execute(text(f"ALTER TABLE {table} DROP CONSTRAINT IF EXISTS {table}_code_key"))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+            try:
+                conn.execute(text(
+                    f"ALTER TABLE {table} ADD CONSTRAINT uq_{table}_user_code UNIQUE (user_id, code)"
+                ))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
+
 def migrate_db():
-    """기존 SQLite DB에 신규 컬럼 추가 — PostgreSQL은 create_all로 처리되므로 스킵"""
+    """기존 DB에 신규 컬럼/제약 추가"""
     if not _is_sqlite:
+        _migrate_postgres()
         return
+    with engine.connect() as conn:
+        for table in ("semi_products", "finished_products"):
+            try:
+                _drop_legacy_code_unique_sqlite(conn, table)
+                conn.commit()
+            except Exception:
+                conn.rollback()
     migrations = [
         "ALTER TABLE materials ADD COLUMN material_code TEXT",
         "ALTER TABLE materials ADD COLUMN category TEXT",

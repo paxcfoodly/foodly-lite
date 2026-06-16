@@ -2626,11 +2626,7 @@ async def import_excel(dtype: str, file: UploadFile = File(...), db: Session = D
                     if cn(4) is not None: existing.unit_price = cn(4)
                     existing.description = cv(5) or existing.description
                     db.flush(); updated += 1; continue
-                # 코드 중복 시 코드 없이 등록
-                code_val = cv(1) or None
-                if code_val and db.query(FinishedProduct).filter(FinishedProduct.code == code_val).first():
-                    code_val = None
-                obj = FinishedProduct(name=cv(0), code=code_val, category=cv(2) or None,
+                obj = FinishedProduct(name=cv(0), code=cv(1) or None, category=cv(2) or None,
                     unit=cv(3) or "ea", unit_price=cn(4),
                     description=cv(5) or None, status="active", user_id=uid())
             elif dtype == "partner":
@@ -2664,6 +2660,9 @@ async def import_excel(dtype: str, file: UploadFile = File(...), db: Session = D
             db.add(obj)
             db.flush()
             created += 1
+        except IntegrityError:
+            db.rollback()
+            errors.append(f"{i}행 오류: {cv(0)} — 이미 사용 중인 코드입니다 (코드를 비우거나 다른 코드를 입력하세요)")
         except Exception as e:
             db.rollback()
             msg = str(e).split('\n')[0]
