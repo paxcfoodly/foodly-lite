@@ -2145,7 +2145,13 @@ def master_list_semi(
 @app.post("/api/master/semi-products", status_code=201)
 def master_create_semi(data: SemiProductIn, db: Session = Depends(get_db)):
     s = SemiProduct(**data.model_dump(), user_id=uid())
-    db.add(s); db.commit(); db.refresh(s)
+    db.add(s)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(400, "이미 사용 중인 반제품 코드입니다.")
+    db.refresh(s)
     return {"id": s.id}
 
 @app.put("/api/master/semi-products/{sid}")
@@ -2198,7 +2204,13 @@ def master_list_products(
 @app.post("/api/master/products", status_code=201)
 def master_create_product(data: FinishedProductIn, db: Session = Depends(get_db)):
     p = FinishedProduct(**data.model_dump(), user_id=uid())
-    db.add(p); db.commit(); db.refresh(p)
+    db.add(p)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(400, "이미 사용 중인 제품 코드입니다.")
+    db.refresh(p)
     return {"id": p.id}
 
 @app.put("/api/master/products/{pid}")
