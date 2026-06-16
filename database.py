@@ -171,8 +171,9 @@ class ProductBOM(Base):
 class Process(Base):
     """공정 마스터"""
     __tablename__ = "processes"
+    __table_args__ = (UniqueConstraint('user_id', 'code', name='uq_processes_user_code'),)
     id = Column(Integer, primary_key=True, index=True)
-    code = Column(String, unique=True)
+    code = Column(String)
     name = Column(String, nullable=False)
     description = Column(Text)
     status = Column(String, default="active")
@@ -458,7 +459,7 @@ def ensure_admin(db):
 
 
 def _drop_legacy_code_unique_sqlite(conn, table):
-    """semi_products/finished_products.code에 걸려있던 전체 테넌트 공용 UNIQUE를
+    """code 컬럼에 걸려있던 전체 테넌트 공용 UNIQUE를
     user_id+code 조합 UNIQUE로 교체. SQLite는 ALTER TABLE로 인라인 UNIQUE를
     제거할 수 없어 테이블을 재생성한다. 이미 마이그레이션됐으면 아무 것도 안 함."""
     idx_rows = conn.execute(text(f"PRAGMA index_list('{table}')")).fetchall()
@@ -492,7 +493,7 @@ def _drop_legacy_code_unique_sqlite(conn, table):
 def _migrate_postgres():
     """code UNIQUE 제약을 전체 테넌트 공용 → user_id+code 조합으로 교체."""
     with engine.connect() as conn:
-        for table in ("semi_products", "finished_products"):
+        for table in ("semi_products", "finished_products", "processes"):
             try:
                 conn.execute(text(f"ALTER TABLE {table} DROP CONSTRAINT IF EXISTS {table}_code_key"))
                 conn.commit()
@@ -513,7 +514,7 @@ def migrate_db():
         _migrate_postgres()
         return
     with engine.connect() as conn:
-        for table in ("semi_products", "finished_products"):
+        for table in ("semi_products", "finished_products", "processes"):
             try:
                 _drop_legacy_code_unique_sqlite(conn, table)
                 conn.commit()
