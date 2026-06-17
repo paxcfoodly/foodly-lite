@@ -1380,9 +1380,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
           <div class="card" style="display:flex;flex-direction:column">
             <div class="card-head"><div class="card-title">입고 정보 입력</div></div>
             <div class="card-body" style="flex:1;display:flex;flex-direction:column;gap:12px">
-              <div class="frow"><div class="fl"><div class="fl-lbl">공급업체</div><select id="form-supplier-id"><option value="">-- 선택 --</option></select></div><div class="fl"><div class="fl-lbl">납품일자 <span class="req">*</span></div><input id="form-delivery-date" class="finput" type="date"/></div></div>
               <div class="frow">
-                <div class="fl"><div class="fl-lbl">원료명 <span class="req">*</span></div><select id="form-material-id"><option value="">-- 선택 --</option></select></div>
+                <div class="fl"><div class="fl-lbl">원료명 <span class="req">*</span></div><select id="form-material-id" onchange="autoFillSupplier(this.value)"><option value="">-- 선택 --</option></select></div>
+                <div class="fl"><div class="fl-lbl">납품일자 <span class="req">*</span></div><input id="form-delivery-date" class="finput" type="date"/></div>
+              </div>
+              <div class="frow"><div class="fl"><div class="fl-lbl">공급업체 <span style="font-size:11px;color:var(--teal-dk)">(원료 선택 시 자동입력)</span></div><select id="form-supplier-id"><option value="">-- 선택 --</option></select></div>
                 <div class="fl"><div class="fl-lbl">수량 <span class="req">*</span></div>
                   <div style="display:flex;gap:6px">
                     <input id="form-quantity" class="finput" type="number" placeholder="0" style="text-align:right;flex:1"/>
@@ -2923,6 +2925,16 @@ async function populateReceiptForm() {
   resetInspectLabels();
   // 검사 담당자 목록 로드
   loadInspectionStaff();
+}
+
+async function autoFillSupplier(matId) {
+  const supSel = document.getElementById('form-supplier-id');
+  if (!supSel || !matId) return;
+  const suppliers = await apiFetch(`/master/materials/${matId}/suppliers`);
+  if (!suppliers || !suppliers.length) return;
+  // 주 공급업체 우선, 없으면 첫 번째
+  const primary = suppliers.find(s => s.is_primary) || suppliers[0];
+  if (primary) supSel.value = primary.supplier_id;
 }
 
 function setExpiry(days) {
