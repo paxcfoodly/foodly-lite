@@ -870,11 +870,37 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
           <div class="kpi"><div class="kl">기간 총 출고량</div><div class="kv" id="ledger-total-out">—</div></div>
           <div class="kpi"><div class="kl">전체 거래 건수</div><div class="kv" id="ledger-count">—</div></div>
         </div>
-        <div class="card" id="ledger-print-area">
-          <table class="tbl" id="ledger-table"><colgroup><col style="width:90px"/><col style="width:120px"/><col style="width:50px"/><col style="width:80px"/><col style="width:120px"/><col style="width:80px"/><col style="width:80px"/><col style="width:80px"/><col/></colgroup>
-            <thead><tr><th>날짜</th><th>원료명</th><th>단위</th><th>구분</th><th>입고처/출처</th><th class="r">입고량</th><th class="r">출고량</th><th class="r">당일재고</th><th>비고</th></tr></thead>
-            <tbody id="ledger-tbody"><tr><td colspan="9" style="text-align:center;padding:32px;color:var(--gray-md)">조회 기간을 선택하고 조회하세요</td></tr></tbody>
-          </table>
+        <div id="ledger-print-area">
+          <div id="ledger-empty" style="text-align:center;padding:48px;color:var(--gray-md)">조회 기간을 선택하고 조회하세요</div>
+          <div id="ledger-content" style="display:none">
+            <div style="background:var(--white);border:1px solid var(--gray-bd);border-radius:var(--radius);padding:24px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+                <h2 style="font-size:20px;font-weight:800;margin:0">원료수불대장</h2>
+                <div style="border:1px solid #333;padding:6px 20px;font-size:13px;font-weight:600">조회기간: <span id="ledger-period"></span></div>
+              </div>
+              <table id="ledger-table" style="width:100%;border-collapse:collapse;font-size:12px">
+                <colgroup>
+                  <col style="width:80px"/><col style="width:130px"/><col style="width:45px"/>
+                  <col style="width:75px"/><col style="width:120px"/><col style="width:75px"/>
+                  <col style="width:75px"/><col style="width:75px"/><col/>
+                </colgroup>
+                <thead>
+                  <tr style="background:#f5f5f5">
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">날짜</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">원료명</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">단위</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">구분</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">입고처/출처</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:right">입고량</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:right">출고량</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:right">잔고</th>
+                    <th style="border:1px solid #ccc;padding:6px;text-align:center">비고</th>
+                  </tr>
+                </thead>
+                <tbody id="ledger-tbody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2464,26 +2490,33 @@ async function runLedger() {
 }
 
 function renderLedger(data) {
-  const typeMap = {
-    '입고': '<span class="bdg b-ok">입고</span>',
-    '생산사용': '<span class="bdg b-purple">생산사용</span>',
-    '재고조정': '<span class="bdg b-warn">조정</span>',
-  };
+  const _td = (content, style='') =>
+    `<td style="border:1px solid #ccc;padding:5px 6px;${style}">${content}</td>`;
+  const typeLabel = {'입고':'입고','생산사용':'생산사용','재고조정':'조정'};
+
   const tbody = document.getElementById('ledger-tbody');
   if (!tbody) return;
   tbody.innerHTML = data.entries.length ? data.entries.map(e => `
     <tr>
-      <td style="color:var(--gray);font-size:12px">${e.date}</td>
-      <td style="font-weight:600">${e.material_name}</td>
-      <td style="font-size:12px;color:var(--gray-md)">${e.unit}</td>
-      <td>${typeMap[e.type]||e.type}</td>
-      <td style="font-size:12px;color:var(--gray)">${e.source||'—'}</td>
-      <td class="r" style="color:var(--teal);font-weight:700">${e.in_qty>0?'+'+fmtQty(e.in_qty):'—'}</td>
-      <td class="r" style="color:var(--purple);font-weight:700">${e.out_qty>0?'−'+fmtQty(e.out_qty):'—'}</td>
-      <td class="r" style="font-weight:700">${fmtQty(e.balance)}</td>
-      <td style="font-size:12px;color:var(--gray)">${e.note||''}</td>
+      ${_td(e.date, 'text-align:center')}
+      ${_td(e.material_name, 'font-weight:600')}
+      ${_td(e.unit, 'text-align:center;color:#666')}
+      ${_td(typeLabel[e.type]||e.type, 'text-align:center')}
+      ${_td(e.source||'', 'color:#666')}
+      ${_td(e.in_qty>0?fmtQty(e.in_qty):'', 'text-align:right;color:#1B7A5E;font-weight:700')}
+      ${_td(e.out_qty>0?fmtQty(e.out_qty):'', 'text-align:right;color:#7B5CF0;font-weight:700')}
+      ${_td(fmtQty(e.balance), 'text-align:right;font-weight:700')}
+      ${_td(e.note||'', 'color:#666')}
     </tr>`).join('') :
-    '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--gray-md)">해당 기간 데이터가 없습니다</td></tr>';
+    '<tr><td colspan="9" style="border:1px solid #ccc;padding:32px;text-align:center;color:#999">해당 기간 데이터가 없습니다</td></tr>';
+
+  const df = document.getElementById('ledger-date-from')?.value || '';
+  const dt = document.getElementById('ledger-date-to')?.value || '';
+  const periodEl = document.getElementById('ledger-period');
+  if (periodEl) periodEl.textContent = `${df} ~ ${dt}`;
+
+  document.getElementById('ledger-empty').style.display = 'none';
+  document.getElementById('ledger-content').style.display = '';
 
   const inEl = document.getElementById('ledger-total-in');
   const outEl = document.getElementById('ledger-total-out');
@@ -2519,16 +2552,39 @@ function ledgerExcel() {
 
 // ── 수불대장 PDF(인쇄)
 function ledgerPrint() {
-  const area = document.getElementById('ledger-print-area');
-  if (!area) return;
+  const content = document.getElementById('ledger-content');
+  if (!content || content.style.display === 'none') { alert('먼저 조회 기간을 선택하고 조회하세요.'); return; }
   const df = document.getElementById('ledger-date-from')?.value || '';
   const dt = document.getElementById('ledger-date-to')?.value || '';
+  const company = localStorage.getItem('foodly_company') || '';
+  const bizNum  = localStorage.getItem('foodly_biz_number') || '';
+  const tableHtml = document.getElementById('ledger-table')?.outerHTML || '';
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>원료수불대장</title>
-    <style>body{font-family:sans-serif;font-size:12px}table{border-collapse:collapse;width:100%}
-    th,td{border:1px solid #ccc;padding:4px 6px}th{background:#f5f5f5}
-    .r{text-align:right}h2{font-size:15px}</style></head><body>
-    <h2>원료수불대장 (${df} ~ ${dt})</h2>${area.innerHTML}</body></html>`);
+    <style>
+      *{box-sizing:border-box}
+      body{font-family:'Malgun Gothic',sans-serif;font-size:12px;margin:15mm 15mm 10mm}
+      table{border-collapse:collapse;width:100%}
+      th,td{border:1px solid #333;padding:6px}
+      th{background:#f0f0f0;text-align:center}
+      .doc-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px}
+      .doc-company{font-size:13px;font-weight:700;line-height:1.6}
+      .doc-biz{font-size:11px;color:#555}
+      .doc-periodbox{border:1px solid #333;padding:5px 16px;font-size:12px;font-weight:600}
+      h1{font-size:26px;font-weight:900;text-align:center;margin:10px 0 14px;letter-spacing:1px}
+      @page{size:A4 landscape;margin:0}
+      @media print{body{margin:12mm 12mm 8mm}}
+    </style></head><body>
+    <div class="doc-top">
+      <div>
+        ${company ? `<div class="doc-company">${company}</div>` : ''}
+        ${bizNum  ? `<div class="doc-biz">사업자등록번호: ${bizNum}</div>` : ''}
+      </div>
+      <div class="doc-periodbox">조회기간: ${df} ~ ${dt}</div>
+    </div>
+    <h1>원료 수불대장</h1>
+    ${tableHtml}
+  </body></html>`);
   w.document.close();
   w.print();
 }
