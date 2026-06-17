@@ -493,8 +493,63 @@ def _drop_legacy_code_unique_sqlite(conn, table):
 
 
 def _migrate_postgres():
-    """code UNIQUE 제약을 전체 테넌트 공용 → user_id+code 조합으로 교체."""
+    """PostgreSQL 전용 마이그레이션: UNIQUE 제약 교체 + 누락 컬럼 추가."""
+    # ADD COLUMN IF NOT EXISTS — PostgreSQL 9.6+에서 지원
+    pg_columns = [
+        "ALTER TABLE materials ADD COLUMN IF NOT EXISTS material_code TEXT",
+        "ALTER TABLE materials ADD COLUMN IF NOT EXISTS category TEXT",
+        "ALTER TABLE materials ADD COLUMN IF NOT EXISTS unit_price REAL",
+        "ALTER TABLE materials ADD COLUMN IF NOT EXISTS description TEXT",
+        "ALTER TABLE materials ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'",
+        "ALTER TABLE materials ADD COLUMN IF NOT EXISTS user_id INTEGER",
+        "ALTER TABLE materials ADD COLUMN IF NOT EXISTS unit_conv_qty REAL",
+        "ALTER TABLE materials ADD COLUMN IF NOT EXISTS unit_conv_unit TEXT",
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS partner_type TEXT DEFAULT 'supplier'",
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS contact_person TEXT",
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS email TEXT",
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS address TEXT",
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS main_products TEXT",
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS user_id INTEGER",
+        "ALTER TABLE semi_products ADD COLUMN IF NOT EXISTS unit_conv_qty REAL",
+        "ALTER TABLE semi_products ADD COLUMN IF NOT EXISTS unit_conv_unit TEXT",
+        "ALTER TABLE semi_products ADD COLUMN IF NOT EXISTS unit_conv2_qty REAL",
+        "ALTER TABLE semi_products ADD COLUMN IF NOT EXISTS unit_conv2_unit TEXT",
+        "ALTER TABLE semi_products ADD COLUMN IF NOT EXISTS user_id INTEGER",
+        "ALTER TABLE finished_products ADD COLUMN IF NOT EXISTS unit_conv_qty REAL",
+        "ALTER TABLE finished_products ADD COLUMN IF NOT EXISTS unit_conv_unit TEXT",
+        "ALTER TABLE finished_products ADD COLUMN IF NOT EXISTS unit_conv2_qty REAL",
+        "ALTER TABLE finished_products ADD COLUMN IF NOT EXISTS unit_conv2_unit TEXT",
+        "ALTER TABLE finished_products ADD COLUMN IF NOT EXISTS current_stock REAL DEFAULT 0",
+        "ALTER TABLE finished_products ADD COLUMN IF NOT EXISTS user_id INTEGER",
+        "ALTER TABLE processes ADD COLUMN IF NOT EXISTS user_id INTEGER",
+        "ALTER TABLE receipts ADD COLUMN IF NOT EXISTS user_id INTEGER",
+        "ALTER TABLE receipts ADD COLUMN IF NOT EXISTS packaging_ok INTEGER",
+        "ALTER TABLE receipts ADD COLUMN IF NOT EXISTS visual_ok INTEGER",
+        "ALTER TABLE receipts ADD COLUMN IF NOT EXISTS judgment_ok INTEGER",
+        "ALTER TABLE receipts ADD COLUMN IF NOT EXISTS inspector TEXT",
+        "ALTER TABLE receipts ADD COLUMN IF NOT EXISTS confirmer TEXT",
+        "ALTER TABLE productions ADD COLUMN IF NOT EXISTS user_id INTEGER",
+        "ALTER TABLE productions ADD COLUMN IF NOT EXISTS finished_product_id INTEGER REFERENCES finished_products(id)",
+        "ALTER TABLE productions ADD COLUMN IF NOT EXISTS expiry_date TIMESTAMP",
+        "ALTER TABLE productions ADD COLUMN IF NOT EXISTS workers TEXT",
+        "ALTER TABLE tenant_users ADD COLUMN IF NOT EXISTS seal_image TEXT",
+        "ALTER TABLE receipt_nonconformances ADD COLUMN IF NOT EXISTS action TEXT",
+        "ALTER TABLE devices ADD COLUMN IF NOT EXISTS user_id INTEGER",
+        "ALTER TABLE devices ADD COLUMN IF NOT EXISTS process_id INTEGER REFERENCES processes(id)",
+        "ALTER TABLE devices ADD COLUMN IF NOT EXISTS photo_data TEXT",
+        "ALTER TABLE devices ADD COLUMN IF NOT EXISTS maintenance_notes TEXT",
+        "ALTER TABLE devices ADD COLUMN IF NOT EXISTS collect_production INTEGER DEFAULT 0",
+        "ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_received_at TIMESTAMP",
+    ]
     with engine.connect() as conn:
+        for sql in pg_columns:
+            try:
+                conn.execute(text(sql))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
+        # UNIQUE 제약을 전체 테넌트 공용 → user_id+code 조합으로 교체
         for table in ("semi_products", "finished_products", "processes"):
             try:
                 conn.execute(text(f"ALTER TABLE {table} DROP CONSTRAINT IF EXISTS {table}_code_key"))

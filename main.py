@@ -700,6 +700,103 @@ def get_ingodaejang(
         } for nc in nc_all],
     }
 
+@app.get("/api/receipts/ingodaejang/excel")
+def download_ingodaejang_excel(
+    material_id: int,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    material = db.query(Material).filter(Material.id == material_id, Material.user_id == uid()).first()
+    if not material:
+        raise HTTPException(404, "Material not found")
+    q = db.query(Receipt).filter(Receipt.material_id == material_id, Receipt.user_id == uid())
+    if date_from:
+        q = q.filter(Receipt.delivery_date >= datetime.fromisoformat(date_from))
+    if date_to:
+        q = q.filter(Receipt.delivery_date <= datetime.fromisoformat(date_to + "T23:59:59"))
+    rows = q.order_by(Receipt.delivery_date).all()
+    nc_all = db.query(ReceiptNonconformance).filter(
+        ReceiptNonconformance.user_id == uid(),
+        ReceiptNonconformance.receipt_id.in_([r.id for r in rows])
+    ).order_by(ReceiptNonconformance.date).all()
+
+    def chk(v):
+        if v is True:  return "적합"
+        if v is False: return "부적합"
+        return ""
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "입고대장"
+
+    hdr_fill = PatternFill("solid", fgColor="1B7A5E")
+    sub_fill = PatternFill("solid", fgColor="4A4A8A")
+    hdr_font = Font(bold=True, color="FFFFFF", size=11)
+    bd = Border(
+        left=Side(style="thin", color="BBBBBB"),
+        right=Side(style="thin", color="BBBBBB"),
+        top=Side(style="thin", color="BBBBBB"),
+        bottom=Side(style="thin", color="BBBBBB"),
+    )
+    center = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells("A1:H1")
+    title_cell = ws["A1"]
+    title_cell.value = f"원재료 입고 검사지 — {material.name}"
+    title_cell.font = Font(bold=True, size=14)
+    title_cell.alignment = center
+    ws.row_dimensions[1].height = 28
+
+    headers = ["날짜", "공급업체", "포장상태", "소비기한", "외관상태", "판정", "검사자", "확인자"]
+    for col, h in enumerate(headers, 1):
+        c = ws.cell(row=2, column=col, value=h)
+        c.fill = hdr_fill; c.font = hdr_font; c.alignment = center; c.border = bd
+    ws.row_dimensions[2].height = 20
+
+    for r in rows:
+        ws.append([
+            r.delivery_date.strftime("%Y-%m-%d") if r.delivery_date else "",
+            r.supplier.name if r.supplier else "",
+            chk(r.packaging_ok),
+            r.expiry_date.strftime("%Y-%m-%d") if r.expiry_date else "",
+            chk(r.visual_ok),
+            chk(r.judgment_ok),
+            r.inspector or "",
+            r.confirmer or "",
+        ])
+        for col in range(1, 9):
+            ws.cell(row=ws.max_row, column=col).border = bd
+
+    ws.append([])
+    nc_row = ws.max_row + 1
+    ws.merge_cells(f"A{nc_row}:C{nc_row}")
+    nc_title = ws.cell(row=nc_row, column=1, value="부적합 내역 및 조치사항")
+    nc_title.fill = sub_fill; nc_title.font = hdr_font; nc_title.alignment = center
+    nc_row += 1
+    for col, h in enumerate(["날짜", "내용 / 조치사항", "검사자"], 1):
+        c = ws.cell(row=nc_row, column=col, value=h)
+        c.fill = sub_fill; c.font = hdr_font; c.alignment = center; c.border = bd
+    for nc in nc_all:
+        content = nc.content or ""
+        if nc.action:
+            content += f" / 조치: {nc.action}"
+        ws.append([nc.date or "", content, nc.inspector or ""])
+        for col in range(1, 4):
+            ws.cell(row=ws.max_row, column=col).border = bd
+
+    col_widths = [14, 20, 10, 14, 10, 10, 12, 12]
+    for i, w in enumerate(col_widths, 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = w
+
+    buf = io.BytesIO()
+    wb.save(buf); buf.seek(0)
+    filename = quote(f"입고대장_{material.name}.xlsx")
+    return StreamingResponse(buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
+    )
+
 @app.post("/api/receipts/nonconformance", status_code=201)
 def add_nonconformance(data: NonconformanceCreate, db: Session = Depends(get_db)):
     r = db.query(Receipt).filter(Receipt.id == data.receipt_id, Receipt.user_id == uid()).first()
@@ -1163,6 +1260,76 @@ def get_saengsan_ilji(
         })
 
     return {"year": year, "month": month, "rows": rows}
+
+
+@app.get("/api/productions/saengsan-ilji/excel")
+def download_saengsan_ilji_excel(year: int, month: int, db: Session = Depends(get_db)):
+    import calendar
+    start = datetime(year, month, 1)
+    _, last_day = calendar.monthrange(year, month)
+    end = datetime(year, month, last_day, 23, 59, 59)
+
+    prods = db.query(Production).filter(
+        Production.user_id == uid(),
+        Production.start_time >= start,
+        Production.start_time <= end,
+    ).order_by(Production.start_time).all()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"{year}년 {month}월 생산일지"
+
+    hdr_fill = PatternFill("solid", fgColor="1B7A5E")
+    hdr_font = Font(bold=True, color="FFFFFF", size=11)
+    bd = Border(
+        left=Side(style="thin", color="BBBBBB"),
+        right=Side(style="thin", color="BBBBBB"),
+        top=Side(style="thin", color="BBBBBB"),
+        bottom=Side(style="thin", color="BBBBBB"),
+    )
+    center = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells("A1:F1")
+    title_cell = ws["A1"]
+    title_cell.value = f"( {month}월 ) 생산일지"
+    title_cell.font = Font(bold=True, size=14)
+    title_cell.alignment = center
+    ws.row_dimensions[1].height = 28
+
+    headers = ["생산일자", "생산제품명", "생산수량", "작업인원", "소비기한", "특이사항"]
+    for col, h in enumerate(headers, 1):
+        c = ws.cell(row=2, column=col, value=h)
+        c.fill = hdr_fill; c.font = hdr_font; c.alignment = center; c.border = bd
+    ws.row_dimensions[2].height = 20
+
+    for p in prods:
+        if p.finished_product_id and p.finished_product:
+            product_name = p.finished_product.name
+        elif p.recipe:
+            product_name = p.recipe.product_name
+        else:
+            product_name = ""
+        ws.append([
+            p.start_time.strftime("%Y-%m-%d") if p.start_time else "",
+            product_name,
+            p.produced_quantity,
+            p.workers or "",
+            p.expiry_date.strftime("%Y-%m-%d") if p.expiry_date else "",
+            p.note or "",
+        ])
+        for col in range(1, 7):
+            ws.cell(row=ws.max_row, column=col).border = bd
+
+    for i, w in enumerate([14, 30, 12, 14, 14, 24], 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = w
+
+    buf = io.BytesIO()
+    wb.save(buf); buf.seek(0)
+    filename = quote(f"생산일지_{year}년{month}월.xlsx")
+    return StreamingResponse(buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
+    )
 
 
 @app.get("/api/debug/semi-bom")

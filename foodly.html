@@ -884,6 +884,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="page-head">
         <div><div class="page-title">입고대장</div><div class="page-sub">원료별 입고검사 이력 · 출력</div></div>
         <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="downloadIngodaejangExcel()">엑셀 다운로드</button>
           <button class="btn btn-ghost btn-sm" onclick="printIngodaejang()">PDF 출력</button>
         </div>
       </div>
@@ -1018,6 +1019,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="page-head">
         <div><div class="page-title">생산일지</div><div class="page-sub">월별 생산 이력 · 출력</div></div>
         <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="downloadSaengsanIljiExcel()">엑셀 다운로드</button>
           <button class="btn btn-ghost btn-sm" onclick="printSaengsanIlji()">PDF 출력</button>
         </div>
       </div>
@@ -2696,6 +2698,42 @@ async function loadIngodaejang() {
         <td style="border:1px solid #ccc;padding:5px;text-align:center">${nc.inspector}</td>
       </tr>`).join('')
     : '<tr><td colspan="3" style="border:1px solid #ccc;padding:12px;text-align:center;color:#999">부적합 이력이 없습니다</td></tr>';
+}
+
+async function downloadIngodaejangExcel() {
+  const matId = document.getElementById('ingoda-material-sel')?.value;
+  if (!matId) { alert('먼저 원료를 선택하고 조회하세요.'); return; }
+  const content = document.getElementById('ingoda-content');
+  if (!content || content.style.display === 'none') { alert('먼저 원료를 선택하고 조회하세요.'); return; }
+  const df = document.getElementById('ingoda-date-from')?.value || '';
+  const dt = document.getElementById('ingoda-date-to')?.value || '';
+  const params = new URLSearchParams({ material_id: matId });
+  if (df) params.set('date_from', df);
+  if (dt) params.set('date_to', dt);
+  const token = localStorage.getItem('foodly_token') || '';
+  const res = await fetch(`/api/receipts/ingodaejang/excel?${params}`, { headers: { 'X-Token': token } });
+  if (!res.ok) { alert('다운로드 실패'); return; }
+  const blob = await res.blob();
+  const matName = document.getElementById('ingoda-matname')?.textContent || '입고대장';
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `입고대장_${matName}.xlsx`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function downloadSaengsanIljiExcel() {
+  const year  = document.getElementById('ilji-year-sel')?.value;
+  const month = document.getElementById('ilji-month-sel')?.value;
+  if (!year || !month) { alert('먼저 연도/월을 선택하고 조회하세요.'); return; }
+  if (!_iljiData) { alert('먼저 조회하세요.'); return; }
+  const token = localStorage.getItem('foodly_token') || '';
+  const res = await fetch(`/api/productions/saengsan-ilji/excel?year=${year}&month=${month}`, { headers: { 'X-Token': token } });
+  if (!res.ok) { alert('다운로드 실패'); return; }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `생산일지_${year}년${month}월.xlsx`; a.click();
+  URL.revokeObjectURL(url);
 }
 
 function printIngodaejang() {
