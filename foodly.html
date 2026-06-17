@@ -2609,7 +2609,7 @@ function ledgerPrint() {
 
   const TH = 'height:26px';
   const mkRow = e => `<tr style="${TH}">
-    <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:9px;text-align:center;white-space:nowrap">${e.date}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 3px;font-size:8px;text-align:center;white-space:nowrap;overflow:hidden">${e.date}</td>
     <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;font-weight:600">${e.material_name}</td>
     <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;text-align:center">${e.unit}</td>
     <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;text-align:center">${typeLabel[e.type]||e.type}</td>
