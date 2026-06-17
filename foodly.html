@@ -2565,7 +2565,7 @@ function ledgerExcel() {
 // ── 공유 출력 CSS
 const _DOC_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
   body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:12px;color:#1E1E1E;background:#fff}
   @page{size:A4 portrait;margin:0}
   .no-print{display:none!important}
