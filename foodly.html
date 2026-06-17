@@ -2562,6 +2562,33 @@ function ledgerExcel() {
   a.click();
 }
 
+// ── 공유 출력 CSS
+const _DOC_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:12px;color:#1E1E1E;background:#fff}
+  @page{size:A4 portrait;margin:0}
+  .no-print{display:none!important}
+  .doc-header{background:#1D9E75;color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center}
+  .doc-header-title{font-size:22px;font-weight:700;letter-spacing:1px}
+  .doc-header-info{text-align:right;font-size:11px;line-height:2;opacity:.95}
+  .doc-body{padding:16px 22px 14px}
+  .doc-section{font-size:13px;font-weight:700;border-left:4px solid #1D9E75;padding-left:10px;margin:14px 0 8px}
+  .doc-cards{display:flex;gap:10px;margin-bottom:14px}
+  .doc-card{flex:1;border:1px solid #D3D1C7;border-radius:6px;padding:9px 13px;background:#F8F7F3;min-width:120px}
+  .doc-card-label{font-size:10px;color:#888;margin-bottom:2px}
+  .doc-card-value{font-size:13px;font-weight:700}
+  table{border-collapse:collapse!important;width:100%}
+  thead tr{background:#1D9E75!important;color:#fff!important}
+  thead th{color:#fff!important;border-color:#0F6E56!important;padding:8px 10px!important;text-align:center!important;font-size:11px!important;font-weight:600!important;word-break:keep-all}
+  tbody tr{height:24px}
+  tbody tr:nth-child(even){background:#F8F7F3!important}
+  tbody td{border:1px solid #D3D1C7!important;padding:6px 10px!important;font-size:12px!important}
+  tfoot td,tfoot th{background:#E1F5EE!important;font-weight:700!important;border:1px solid #D3D1C7!important}
+  .r,.right{text-align:right}
+  .c{text-align:center}
+`;
+
 // ── 수불대장 PDF(인쇄)
 function ledgerPrint() {
   const content = document.getElementById('ledger-content');
@@ -2573,29 +2600,16 @@ function ledgerPrint() {
   const tableHtml = document.getElementById('ledger-table')?.outerHTML || '';
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>원료수불대장</title>
-    <style>
-      *{box-sizing:border-box}
-      body{font-family:'Malgun Gothic',sans-serif;font-size:12px;margin:15mm 15mm 10mm}
-      table{border-collapse:collapse;width:100%}
-      th,td{border:1px solid #333;padding:6px}
-      th{background:#f0f0f0;text-align:center}
-      .doc-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px}
-      .doc-company{font-size:13px;font-weight:700;line-height:1.6}
-      .doc-biz{font-size:11px;color:#555}
-      .doc-periodbox{border:1px solid #333;padding:5px 16px;font-size:12px;font-weight:600}
-      h1{font-size:26px;font-weight:900;text-align:center;margin:10px 0 14px;letter-spacing:1px}
-      @page{size:A4 portrait;margin:0}
-      @media print{body{margin:12mm 12mm 8mm}}
-    </style></head><body>
-    <div class="doc-top">
-      <div>
-        ${company ? `<div class="doc-company">${company}</div>` : ''}
-        ${bizNum  ? `<div class="doc-biz">사업자등록번호: ${bizNum}</div>` : ''}
+    <style>${_DOC_CSS}</style></head><body>
+    <div class="doc-header">
+      <div class="doc-header-title">원료 수불대장</div>
+      <div class="doc-header-info">
+        ${company ? company+'<br>' : ''}
+        ${bizNum ? '사업자번호: '+bizNum+'<br>' : ''}
+        조회기간: ${df} ~ ${dt}
       </div>
-      <div class="doc-periodbox">조회기간: ${df} ~ ${dt}</div>
     </div>
-    <h1>원료 수불대장</h1>
-    ${tableHtml}
+    <div class="doc-body">${tableHtml}</div>
   </body></html>`);
   w.document.close();
   w.print();
@@ -2813,33 +2827,21 @@ function printIngodaejang() {
   const tableHtml = document.getElementById('ingoda-table')?.outerHTML || '';
   const ncTable   = document.getElementById('ingoda-nc-table')?.outerHTML || '';
   const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>원재료 입고 검사지</title>
-    <style>
-      *{box-sizing:border-box}
-      body{font-family:'Malgun Gothic',sans-serif;font-size:12px;margin:15mm 15mm 10mm}
-      table{border-collapse:collapse;width:100%}
-      th,td{border:1px solid #333;padding:6px}
-      th{background:#f0f0f0;text-align:center}
-      .doc-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px}
-      .doc-company{font-size:13px;font-weight:700;line-height:1.6}
-      .doc-biz{font-size:11px;color:#555}
-      .doc-matbox{border:1px solid #333;padding:5px 16px;font-size:12px;font-weight:600}
-      h1{font-size:26px;font-weight:900;text-align:center;margin:10px 0 14px;letter-spacing:1px}
-      .nc-label{font-size:12px;font-weight:700;margin:14px 0 6px}
-      @page{size:A4;margin:0}
-      @media print{body{margin:15mm 15mm 10mm}}
-    </style></head><body>
-    <div class="doc-top">
-      <div>
-        ${company ? `<div class="doc-company">${company}</div>` : ''}
-        ${bizNum  ? `<div class="doc-biz">사업자등록번호: ${bizNum}</div>` : ''}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>입고대장</title>
+    <style>${_DOC_CSS}</style></head><body>
+    <div class="doc-header">
+      <div class="doc-header-title">원재료 입고 검사지</div>
+      <div class="doc-header-info">
+        ${company ? company+'<br>' : ''}
+        ${bizNum ? '사업자번호: '+bizNum+'<br>' : ''}
+        원료명: ${matname}
       </div>
-      <div class="doc-matbox">원료명: ${matname}</div>
     </div>
-    <h1>원재료 입고 검사지</h1>
-    ${tableHtml}
-    <div class="nc-label">부적합내역 및 조치사항</div>
-    ${ncTable}
+    <div class="doc-body">
+      ${tableHtml}
+      <div class="doc-section">부적합내역 및 조치사항</div>
+      ${ncTable}
+    </div>
   </body></html>`);
   w.document.close();
   w.print();
@@ -5364,43 +5366,35 @@ function printSaengsanIlji() {
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>생산일지</title>
     <style>
-      *{box-sizing:border-box}
-      body{font-family:'Malgun Gothic',sans-serif;font-size:11px;margin:12mm 12mm 8mm}
-      table{border-collapse:collapse;width:100%;table-layout:fixed}
+      ${_DOC_CSS}
+      table{table-layout:fixed}
       colgroup col.c-date{width:14%}
       colgroup col.c-name{width:30%}
       colgroup col.c-qty {width:10%}
       colgroup col.c-wkr {width:11%}
       colgroup col.c-exp {width:14%}
       colgroup col.c-note{width:21%}
-      th{border:1px solid #333;padding:6px 4px;background:#f0f0f0;text-align:center;word-break:keep-all}
-      td{border:1px solid #333;padding:5px 6px}
-      tr{height:22px}
-      .doc-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px}
-      .doc-company{font-size:13px;font-weight:700;line-height:1.6}
-      .doc-biz{font-size:10px;color:#555}
-      h1{font-size:22px;font-weight:900;text-align:center;margin:8px 0 12px;letter-spacing:2px}
-      @page{size:A4 portrait;margin:0}
-      @media print{body{margin:12mm 12mm 8mm}}
     </style></head><body>
-    <div class="doc-top">
-      <div>
-        ${company ? `<div class="doc-company">${company}</div>` : ''}
-        ${bizNum  ? `<div class="doc-biz">사업자등록번호: ${bizNum}</div>` : ''}
+    <div class="doc-header">
+      <div class="doc-header-title">${titleText}</div>
+      <div class="doc-header-info">
+        ${company ? company+'<br>' : ''}
+        ${bizNum ? '사업자번호: '+bizNum : ''}
       </div>
     </div>
-    <h1>${titleText}</h1>
-    <table>
-      <colgroup>
-        <col class="c-date"/><col class="c-name"/>
-        <col class="c-qty"/><col class="c-wkr"/><col class="c-exp"/><col class="c-note"/>
-      </colgroup>
-      <thead><tr>
-        <th>생산일자</th><th>생산제품명</th>
-        <th>생산수량</th><th>작업인원</th><th>소비기한</th><th>특이사항</th>
-      </tr></thead>
-      <tbody>${filledRows}${padRows}</tbody>
-    </table>
+    <div class="doc-body">
+      <table>
+        <colgroup>
+          <col class="c-date"/><col class="c-name"/>
+          <col class="c-qty"/><col class="c-wkr"/><col class="c-exp"/><col class="c-note"/>
+        </colgroup>
+        <thead><tr>
+          <th>생산일자</th><th>생산제품명</th>
+          <th>생산수량</th><th>작업인원</th><th>소비기한</th><th>특이사항</th>
+        </tr></thead>
+        <tbody>${filledRows}${padRows}</tbody>
+      </table>
+    </div>
   </body></html>`);
   w.document.close();
   w.print();
@@ -6121,9 +6115,23 @@ function exportSalesCSV() {
 function printSalesLedger() {
   const area = document.getElementById('sales-ledger-print-area');
   if (!area) return;
-  const title = `<h2 style="margin-bottom:12px;font-size:18px">매출 대장</h2><div style="margin-bottom:8px;font-size:13px;color:#555">${document.getElementById('sl-date-from')?.value||''} ~ ${document.getElementById('sl-date-to')?.value||''}</div>`;
+  const company = localStorage.getItem('foodly_company') || '';
+  const bizNum  = localStorage.getItem('foodly_biz_number') || '';
+  const df = document.getElementById('sl-date-from')?.value || '';
+  const dt = document.getElementById('sl-date-to')?.value || '';
   const win = window.open('', '_blank', 'width=900,height=700');
-  win.document.write(`<html><head><title>매출대장</title><style>body{font-family:sans-serif;font-size:13px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:6px 8px}th{background:#f5f5f5}.r{text-align:right}</style></head><body>${title}${area.innerHTML}</body></html>`);
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>매출대장</title>
+    <style>${_DOC_CSS}</style></head><body>
+    <div class="doc-header">
+      <div class="doc-header-title">매출 대장</div>
+      <div class="doc-header-info">
+        ${company ? company+'<br>' : ''}
+        ${bizNum ? '사업자번호: '+bizNum+'<br>' : ''}
+        ${df||dt ? '조회기간: '+(df||'')+'~'+(dt||'') : ''}
+      </div>
+    </div>
+    <div class="doc-body">${area.innerHTML}</div>
+  </body></html>`);
   win.document.close(); win.print();
 }
 
@@ -6259,67 +6267,78 @@ async function loadStatement(id) {
     : '';
 
   preview.innerHTML = `
-    <div id="stmt-print-body" style="max-width:700px;margin:0 auto;font-family:'Noto Sans KR',sans-serif">
-      <h2 style="text-align:center;font-size:22px;font-weight:700;letter-spacing:4px;margin-bottom:20px;border-bottom:3px solid #1D9E75;padding-bottom:12px">거 래 명 세 서</h2>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-        <div style="border:1px solid #ddd;border-radius:6px;padding:14px">
-          <div style="font-size:11px;color:#888;margin-bottom:4px">수신처 (납품받는 곳)</div>
-          <div style="font-size:16px;font-weight:700;margin-bottom:6px">${data.customer.name || '—'} 귀중</div>
-          <div style="font-size:12px;color:#555;line-height:1.8">
-            ${data.customer.business_number ? '사업자번호: '+data.customer.business_number+'<br>' : ''}
-            ${data.customer.address ? '주소: '+data.customer.address+'<br>' : ''}
-            ${data.customer.contact ? '연락처: '+data.customer.contact : ''}
-          </div>
-        </div>
-        <div style="border:1px solid #ddd;border-radius:6px;padding:14px;position:relative;min-height:100px">
-          <div style="font-size:11px;color:#888;margin-bottom:4px">공급자</div>
-          <div style="font-size:16px;font-weight:700;margin-bottom:6px">${data.supplier.company_name}</div>
-          <div style="font-size:12px;color:#555;line-height:1.8">
-            사업자번호: ${data.supplier.business_number||'—'}<br>
-            명세서번호: <span style="font-family:monospace">${data.shipment_number}</span><br>
-            납품일: ${data.delivery_date}
-          </div>
-          ${sealHtml}
+    <div id="stmt-print-body" style="font-family:'Noto Sans KR',sans-serif;max-width:720px;margin:0 auto;border:1px solid #D3D1C7;border-radius:8px;overflow:hidden">
+      <div style="background:#1D9E75;color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:22px;font-weight:700;letter-spacing:1px">거 래 명 세 서</div>
+        <div style="text-align:right;font-size:11px;line-height:2;opacity:.95">
+          ${data.supplier.company_name}<br>
+          명세서번호: ${data.shipment_number}<br>
+          납품일: ${data.delivery_date}
         </div>
       </div>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px">
-        <thead>
-          <tr style="background:#1D9E75;color:#fff">
-            <th style="padding:10px 12px;text-align:left;font-weight:600">품목명</th>
-            <th style="padding:10px 12px;text-align:center;font-weight:600;width:80px">단위</th>
-            <th style="padding:10px 12px;text-align:center;font-weight:600;width:80px">로트번호</th>
-            <th style="padding:10px 12px;text-align:right;font-weight:600;width:80px">수량</th>
-            <th style="padding:10px 12px;text-align:right;font-weight:600;width:100px">단가</th>
-            <th style="padding:10px 12px;text-align:right;font-weight:600;width:110px">금액</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="border-bottom:1px solid #eee">
-            <td style="padding:12px">${item.product_name||''}</td>
-            <td style="padding:12px;text-align:center">${item.unit||''}</td>
-            <td style="padding:12px;text-align:center;font-family:monospace;font-size:11px">${item.lot_number||'—'}</td>
-            <td style="padding:12px;text-align:right">${fmtQty(item.quantity||0)}</td>
-            <td style="padding:12px;text-align:right">${item.unit_price ? item.unit_price.toLocaleString()+'원' : '—'}</td>
-            <td style="padding:12px;text-align:right;font-weight:700">${item.total_amount ? item.total_amount.toLocaleString()+'원' : '—'}</td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr style="background:#f5f5f5;font-weight:700">
-            <td colspan="5" style="padding:12px;text-align:right">합계</td>
-            <td style="padding:12px;text-align:right;font-size:15px;color:#0F6E56">${data.total_amount ? data.total_amount.toLocaleString()+'원' : '—'}</td>
-          </tr>
-        </tfoot>
-      </table>
-      ${data.note ? `<div style="padding:12px;background:#f9f9f9;border-radius:6px;font-size:13px;color:#555"><b>비고:</b> ${data.note}</div>` : ''}
-      <div style="display:flex;justify-content:flex-end;align-items:flex-end;margin-top:32px;gap:24px">
-        <div style="text-align:center">
-          <div style="font-size:13px;font-weight:600;margin-bottom:4px">공급자 확인</div>
-          <div style="width:120px;height:50px;border-bottom:1px solid #aaa;position:relative">
-            ${sealSrc ? `<img src="${sealSrc}" style="position:absolute;bottom:-10px;right:0;width:60px;height:60px;object-fit:contain;opacity:0.85;transform:rotate(-4deg)" alt="직인"/>` : ''}
+      <div style="padding:16px 22px">
+        <div style="font-size:13px;font-weight:700;border-left:4px solid #1D9E75;padding-left:10px;margin:0 0 10px">거래처 정보</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+          <div style="border:1px solid #D3D1C7;border-radius:6px;padding:10px 14px;background:#F8F7F3">
+            <div style="font-size:10px;color:#888;margin-bottom:3px">수신처 (납품받는 곳)</div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:4px">${data.customer.name || '—'} 귀중</div>
+            <div style="font-size:12px;color:#555;line-height:1.8">
+              ${data.customer.business_number ? '사업자번호: '+data.customer.business_number+'<br>' : ''}
+              ${data.customer.address ? '주소: '+data.customer.address+'<br>' : ''}
+              ${data.customer.contact ? '연락처: '+data.customer.contact : ''}
+            </div>
+          </div>
+          <div style="border:1px solid #D3D1C7;border-radius:6px;padding:10px 14px;background:#F8F7F3;position:relative;min-height:90px">
+            <div style="font-size:10px;color:#888;margin-bottom:3px">공급자</div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:4px">${data.supplier.company_name}</div>
+            <div style="font-size:12px;color:#555;line-height:1.8">
+              사업자번호: ${data.supplier.business_number||'—'}<br>
+              ${data.supplier.address ? '주소: '+data.supplier.address+'<br>' : ''}
+              ${data.supplier.contact ? '연락처: '+data.supplier.contact : ''}
+            </div>
+            ${sealHtml}
           </div>
         </div>
+        <div style="font-size:13px;font-weight:700;border-left:4px solid #1D9E75;padding-left:10px;margin:0 0 8px">품목 내역</div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:13px">
+          <thead>
+            <tr style="background:#1D9E75;color:#fff">
+              <th style="padding:9px 12px;text-align:left;font-weight:600;border:1px solid #0F6E56">품목명</th>
+              <th style="padding:9px 12px;text-align:center;font-weight:600;border:1px solid #0F6E56;width:70px">단위</th>
+              <th style="padding:9px 12px;text-align:center;font-weight:600;border:1px solid #0F6E56;width:110px">로트번호</th>
+              <th style="padding:9px 12px;text-align:right;font-weight:600;border:1px solid #0F6E56;width:70px">수량</th>
+              <th style="padding:9px 12px;text-align:right;font-weight:600;border:1px solid #0F6E56;width:90px">단가</th>
+              <th style="padding:9px 12px;text-align:right;font-weight:600;border:1px solid #0F6E56;width:100px">금액</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:#F8F7F3">
+              <td style="padding:11px 12px;border:1px solid #D3D1C7">${item.product_name||''}</td>
+              <td style="padding:11px 12px;border:1px solid #D3D1C7;text-align:center">${item.unit||''}</td>
+              <td style="padding:11px 12px;border:1px solid #D3D1C7;text-align:center;font-family:monospace;font-size:11px">${item.lot_number||'—'}</td>
+              <td style="padding:11px 12px;border:1px solid #D3D1C7;text-align:right">${fmtQty(item.quantity||0)}</td>
+              <td style="padding:11px 12px;border:1px solid #D3D1C7;text-align:right">${item.unit_price ? item.unit_price.toLocaleString()+'원' : '—'}</td>
+              <td style="padding:11px 12px;border:1px solid #D3D1C7;text-align:right;font-weight:700">${item.total_amount ? item.total_amount.toLocaleString()+'원' : '—'}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr style="background:#E1F5EE;font-weight:700">
+              <td colspan="5" style="padding:10px 12px;border:1px solid #D3D1C7;text-align:right">합계</td>
+              <td style="padding:10px 12px;border:1px solid #D3D1C7;text-align:right;font-size:15px;color:#0F6E56">${data.total_amount ? data.total_amount.toLocaleString()+'원' : '—'}</td>
+            </tr>
+          </tfoot>
+        </table>
+        ${data.note ? `<div style="padding:11px 14px;background:#F8F7F3;border:1px solid #D3D1C7;border-radius:6px;font-size:13px;color:#555;margin-bottom:14px"><b>비고:</b> ${data.note}</div>` : ''}
+        <div style="display:flex;justify-content:flex-end;margin-top:24px">
+          <div style="text-align:center">
+            <div style="font-size:12px;font-weight:600;margin-bottom:4px;color:#555">공급자 확인</div>
+            <div style="width:120px;height:50px;border-bottom:2px solid #D3D1C7;position:relative">
+              ${sealSrc ? `<img src="${sealSrc}" style="position:absolute;bottom:-10px;right:0;width:60px;height:60px;object-fit:contain;opacity:0.85;transform:rotate(-4deg)" alt="직인"/>` : ''}
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:16px;font-size:11px;color:#aaa">${today} 출력</div>
       </div>
-      <div style="text-align:center;margin-top:16px;font-size:11px;color:#aaa">${today} 출력</div>
     </div>`;
 
   document.getElementById('stmt-print-btn').style.display = '';
@@ -6330,7 +6349,9 @@ function printStatement() {
   const body = document.getElementById('stmt-print-body');
   if (!body) return;
   const win = window.open('', '_blank', 'width=800,height=700');
-  win.document.write(`<html><head><title>거래명세서</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Noto Sans KR',sans-serif;padding:32px;font-size:13px}@media print{body{padding:16px}}</style></head><body>${body.outerHTML}<script>window.onload=function(){window.print();}<\/script></body></html>`);
+  win.document.write(`<!DOCTYPE html><html><head><title>거래명세서</title>
+    <style>${_DOC_CSS}body{padding:20px}</style></head>
+    <body>${body.outerHTML}<script>window.onload=function(){window.print();}<\/script></body></html>`);
   win.document.close();
 }
 
