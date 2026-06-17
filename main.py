@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Query, File, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse, HTMLResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
@@ -105,10 +105,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# HTML 서빙
-@app.get("/", response_class=FileResponse)
-def serve_html():
-    return FileResponse("foodly.html", headers={"Cache-Control": "no-store"})
+# 정적 파일 (OG 이미지 등)
+_static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(_static_dir):
+    app.mount("/static", StaticFiles(directory=_static_dir), name="static")
+
+# HTML 서빙 — OG 이미지 URL을 현재 도메인 기반으로 동적 주입
+@app.get("/", response_class=HTMLResponse)
+def serve_html(request: Request):
+    with open("foodly.html", "r", encoding="utf-8") as f:
+        html = f.read()
+    base = str(request.base_url).rstrip("/")
+    html = html.replace("__OG_BASE_URL__", base)
+    return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 
 
 @app.on_event("startup")
