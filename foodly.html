@@ -6275,20 +6275,22 @@ function buildStmtCopy(data, copyType, sealSrc) {
   const dateStr = data.delivery_date ? data.delivery_date.slice(5).replace('-', '/') : '';
   const totalAmt = data.total_amount ? data.total_amount.toLocaleString()
     : (item.total_amount ? item.total_amount.toLocaleString() : '—');
-  const ROWS = 8;
+  const ROWS = 5;
+  const ROW_H = 'height:28px;max-height:28px;overflow:hidden;';
   const S = 'border:1px solid #555;';
+  const TD = `${S}overflow:hidden;max-height:28px;`;
 
-  const dataRow = item.product_name ? `<tr style="height:23px">
-    <td style="${S}padding:3px 4px;text-align:center;font-size:10px">${dateStr}</td>
-    <td style="${S}padding:3px 6px;font-size:10px">${item.product_name}${item.unit ? ' ('+item.unit+')' : ''}</td>
-    <td style="${S}padding:3px 4px;text-align:center"><span class="lot">${item.lot_number||''}</span></td>
-    <td style="${S}padding:3px 4px;text-align:right;font-size:10px">${fmtQty(item.quantity||0)}</td>
-    <td style="${S}padding:3px 4px;text-align:right;font-size:10px">${item.unit_price ? item.unit_price.toLocaleString() : ''}</td>
-    <td style="${S}padding:3px 4px;text-align:right;font-size:10px;font-weight:700">${item.total_amount ? item.total_amount.toLocaleString() : ''}</td>
-    <td style="${S}padding:3px 4px"></td>
-    <td style="${S}padding:3px 6px;font-size:10px">${data.note||''}</td>
+  const dataRow = item.product_name ? `<tr style="${ROW_H}">
+    <td style="${TD}padding:3px 4px;text-align:center;font-size:10px">${dateStr}</td>
+    <td style="${TD}padding:3px 6px;font-size:10px">${item.product_name}</td>
+    <td style="${TD}padding:3px 4px;text-align:center;font-size:10px">${item.unit||''}</td>
+    <td style="${TD}padding:3px 4px;text-align:right;font-size:10px">${fmtQty(item.quantity||0)}</td>
+    <td style="${TD}padding:3px 4px;text-align:right;font-size:10px">${item.unit_price ? item.unit_price.toLocaleString() : ''}</td>
+    <td style="${TD}padding:3px 4px;text-align:right;font-size:10px;font-weight:700">${item.total_amount ? item.total_amount.toLocaleString() : ''}</td>
+    <td style="${TD}padding:3px 4px"></td>
+    <td style="${TD}padding:2px 4px"><span style="font-size:9px;line-height:1.2;word-break:break-all;display:block">${item.lot_number||''}${data.note && item.lot_number ? ' ' : ''}${data.note||''}</span></td>
   </tr>` : '';
-  const emptyRow = `<tr style="height:23px"><td style="${S}"></td><td style="${S}"></td><td style="${S}"></td><td style="${S}"></td><td style="${S}"></td><td style="${S}"></td><td style="${S}"></td><td style="${S}"></td></tr>`;
+  const emptyRow = `<tr style="${ROW_H}"><td style="${TD}">&nbsp;</td><td style="${TD}"></td><td style="${TD}"></td><td style="${TD}"></td><td style="${TD}"></td><td style="${TD}"></td><td style="${TD}"></td><td style="${TD}"></td></tr>`;
   const padRows = Array.from({length: Math.max(0, ROWS-(item.product_name?1:0))}, ()=>emptyRow).join('');
   const sealImg = sealSrc
     ? `<img src="${sealSrc}" style="position:absolute;top:2px;right:4px;width:46px;height:46px;object-fit:contain;opacity:0.85;transform:rotate(-5deg)" alt="직인"/>`
@@ -6363,7 +6365,7 @@ function buildStmtCopy(data, copyType, sealSrc) {
         <tr style="background:#f0f0f0">
           <th style="${S}padding:4px 3px;text-align:center;font-size:10px;width:8%">월/일</th>
           <th style="${S}padding:4px 3px;text-align:center;font-size:10px;width:28%">품목</th>
-          <th style="${S}padding:4px 3px;text-align:center;font-size:10px;width:10%">규격</th>
+          <th style="${S}padding:4px 3px;text-align:center;font-size:10px;width:10%">단위</th>
           <th style="${S}padding:4px 3px;text-align:center;font-size:10px;width:7%">수량</th>
           <th style="${S}padding:4px 3px;text-align:center;font-size:10px;width:14%">단가</th>
           <th style="${S}padding:4px 3px;text-align:center;font-size:10px;width:14%">공급가액</th>
@@ -6384,12 +6386,13 @@ function buildStmtCopy(data, copyType, sealSrc) {
       </tfoot>
     </table>
     <table style="width:100%;border-collapse:collapse;border-top:1px solid #555">
-      <tr style="height:28px">
-        <td style="${S}padding:4px 8px;font-size:10px">재공급단 발행</td>
-        <td style="${S}padding:4px 8px;font-size:10px;width:20%">인수자</td>
-        <td style="${S}padding:4px 8px;font-size:10px;width:20%">납품자</td>
-        <td style="${S}padding:4px 8px;font-size:10px;width:10%">인</td>
-        <td style="${S}padding:4px 8px;font-size:10px;width:15%">비고</td>
+      <tr style="height:32px">
+        <td style="${S}padding:4px 8px;font-size:10px;width:50%;text-align:center">
+          인 수 자 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (인)
+        </td>
+        <td style="${S}padding:4px 8px;font-size:10px;width:50%;text-align:center">
+          납 품 자 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (인)
+        </td>
       </tr>
     </table>
   </div>`;
