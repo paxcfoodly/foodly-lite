@@ -1033,15 +1033,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
               <h2 id="ilji-title" style="font-size:22px;font-weight:900;text-align:center;margin:0 0 16px;letter-spacing:2px"></h2>
               <table id="ilji-table" style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
                 <colgroup>
-                  <col style="width:9%"/><col style="width:22%"/><col style="width:14%"/>
-                  <col style="width:8%"/><col style="width:9%"/>
-                  <col style="width:11%"/><col style="width:27%"/>
+                  <col style="width:11%"/><col style="width:30%"/>
+                  <col style="width:10%"/><col style="width:11%"/>
+                  <col style="width:13%"/><col style="width:25%"/>
                 </colgroup>
                 <thead>
                   <tr style="background:#f0f0f0">
                     <th style="border:1px solid #999;padding:7px 6px;text-align:center">생산일자</th>
-                    <th style="border:1px solid #999;padding:7px 6px;text-align:center">생산재품명</th>
-                    <th style="border:1px solid #999;padding:7px 6px;text-align:center">포장방법 및 단위</th>
+                    <th style="border:1px solid #999;padding:7px 6px;text-align:center">생산제품명</th>
                     <th style="border:1px solid #999;padding:7px 6px;text-align:center">생산수량</th>
                     <th style="border:1px solid #999;padding:7px 6px;text-align:center">작업인원</th>
                     <th style="border:1px solid #999;padding:7px 6px;text-align:center">소비기한</th>
@@ -1371,6 +1370,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
                     <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(30)">+30일</button>
                     <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(60)">+60일</button>
                     <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(90)">+90일</button>
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(180)">+180일</button>
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="setExpiry(365)">+1년</button>
                     <input id="form-expiry-date" class="finput" type="date" style="flex:1;min-width:130px"/>
                   </div>
                 </div>
@@ -1462,11 +1463,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
             <div class="card-title">원재료 목록</div>
             <div class="fbar">
               <input id="mat-search" type="text" class="search-input" placeholder="품목명 검색" oninput="loadMaterMaster()"/>
-              <select id="mat-cat-filter" class="filter-select" onchange="loadMaterMaster()">
-                <option value="">전체 분류</option>
-                <option>곡물류</option><option>유제품</option><option>당류</option>
-                <option>유지류</option><option>향신료</option><option>기타</option>
-              </select>
               <select id="mat-status-filter" class="filter-select" onchange="loadMaterMaster()">
                 <option value="">전체 상태</option>
                 <option value="active">활성</option><option value="inactive">비활성</option>
@@ -1474,8 +1470,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
             </div>
           </div>
           <table class="tbl">
-            <colgroup><col style="width:90px"/><col style="width:180px"/><col style="width:80px"/><col style="width:55px"/><col style="width:85px"/><col style="width:85px"/><col style="width:90px"/><col style="width:55px"/><col style="width:140px"/></colgroup>
-            <thead><tr><th>코드</th><th>품목명</th><th>분류</th><th>단위</th><th class="r">안전재고</th><th class="r">현재고</th><th class="r">단가(원)</th><th>상태</th><th></th></tr></thead>
+            <colgroup><col style="width:90px"/><col style="width:220px"/><col style="width:55px"/><col style="width:85px"/><col style="width:85px"/><col style="width:90px"/><col style="width:55px"/><col style="width:140px"/></colgroup>
+            <thead><tr><th>코드</th><th>품목명</th><th>단위</th><th class="r">안전재고</th><th class="r">현재고</th><th class="r">단가(원)</th><th>상태</th><th></th></tr></thead>
             <tbody id="mat-tbody"></tbody>
           </table>
         </div>
@@ -1505,8 +1501,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
             </div>
           </div>
           <table class="tbl">
-            <colgroup><col style="width:90px"/><col style="width:180px"/><col style="width:80px"/><col style="width:55px"/><col style="width:85px"/><col style="width:90px"/><col style="width:55px"/><col style="width:240px"/></colgroup>
-            <thead><tr><th>코드</th><th>품목명</th><th>분류</th><th>단위</th><th class="r">기준수량</th><th class="r">단가(원)</th><th>상태</th><th></th></tr></thead>
+            <colgroup><col style="width:90px"/><col style="width:220px"/><col style="width:55px"/><col style="width:85px"/><col style="width:90px"/><col style="width:55px"/><col style="width:240px"/></colgroup>
+            <thead><tr><th>코드</th><th>품목명</th><th>단위</th><th class="r">기준수량</th><th class="r">단가(원)</th><th>상태</th><th></th></tr></thead>
             <tbody id="semi-tbody"></tbody>
           </table>
         </div>
@@ -1529,11 +1525,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
             <div class="card-title">제품 목록</div>
             <div class="fbar">
               <input id="prod-search" type="text" class="search-input" placeholder="제품명 검색" oninput="loadProductMaster()"/>
-              <select id="prod-cat-filter" class="filter-select" onchange="loadProductMaster()">
-                <option value="">전체 분류</option>
-                <option>식빵류</option><option>과자류</option><option>케이크류</option>
-                <option>파이류</option><option>기타</option>
-              </select>
               <select id="prod-status-filter" class="filter-select" onchange="loadProductMaster()">
                 <option value="">전체 상태</option>
                 <option value="active">활성</option><option value="inactive">비활성</option>
@@ -1541,8 +1532,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
             </div>
           </div>
           <table class="tbl">
-            <colgroup><col style="width:90px"/><col style="width:180px"/><col style="width:80px"/><col style="width:55px"/><col style="width:100px"/><col style="width:55px"/><col style="width:240px"/></colgroup>
-            <thead><tr><th>제품코드</th><th>제품명</th><th>분류</th><th>단위</th><th class="r">판매단가(원)</th><th>상태</th><th></th></tr></thead>
+            <colgroup><col style="width:90px"/><col style="width:220px"/><col style="width:55px"/><col style="width:100px"/><col style="width:55px"/><col style="width:240px"/></colgroup>
+            <thead><tr><th>제품코드</th><th>제품명</th><th>단위</th><th class="r">판매단가(원)</th><th>상태</th><th></th></tr></thead>
             <tbody id="prod-tbody"></tbody>
           </table>
         </div>
@@ -3242,6 +3233,8 @@ async function openProductionModal(productId, qty, good, defect, startTime, endT
             <button type="button" class="btn btn-ghost btn-sm" onclick="setProdExpiry(30)">+30일</button>
             <button type="button" class="btn btn-ghost btn-sm" onclick="setProdExpiry(60)">+60일</button>
             <button type="button" class="btn btn-ghost btn-sm" onclick="setProdExpiry(90)">+90일</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="setProdExpiry(180)">+180일</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="setProdExpiry(365)">+1년</button>
             <input id="prod-expiry" class="finput" type="date" value="${expiryDate||''}" style="flex:1;min-width:128px"/>
           </div>
         </div>
@@ -4000,11 +3993,9 @@ const partnerTypeLabel = {
 // ── 원재료 마스터 ─────────────────────────────────────
 async function loadMaterMaster() {
   const search = document.getElementById('mat-search')?.value || '';
-  const cat    = document.getElementById('mat-cat-filter')?.value || '';
   const stat   = document.getElementById('mat-status-filter')?.value || '';
   let url = '/master/materials?';
   if (search) url += `search=${encodeURIComponent(search)}&`;
-  if (cat)    url += `category=${encodeURIComponent(cat)}&`;
   if (stat)   url += `status=${encodeURIComponent(stat)}&`;
 
   const data = await apiFetch(url);
@@ -4030,7 +4021,6 @@ async function loadMaterMaster() {
     <tr>
       <td><span class="lot">${m.material_code}</span></td>
       <td style="font-weight:700">${m.name}<br/><span style="font-size:11px;color:var(--gray)">${m.description||''}</span></td>
-      <td>${m.category||'—'}</td>
       <td>${m.unit}</td>
       <td class="r">${fmtQty(m.safety_stock)}</td>
       <td class="r">${fmtQty(m.current_stock)} ${stockBdg(m.stock_status)}</td>
@@ -4059,7 +4049,6 @@ async function loadSemiMaster() {
     <tr>
       <td><span class="lot">${s.code}</span></td>
       <td style="font-weight:700">${s.name}<br/><span style="font-size:11px;color:var(--gray)">${s.description||''}</span></td>
-      <td>${s.category||'—'}</td>
       <td>${s.unit}</td>
       <td class="r">${s.standard_qty ?? '—'}</td>
       <td class="r">${s.unit_price ? s.unit_price.toLocaleString() : '—'}</td>
@@ -4135,20 +4124,25 @@ const masterFormHtml = {
       <div class="fl"><div class="fl-lbl">품목명 <span class="req">*</span></div><input id="mf-name" class="finput" value="${item?.name||''}" required/></div>
     </div>
     <div class="frow">
-      <div class="fl"><div class="fl-lbl">분류</div>
-        <select id="mf-category" class="finput">
-          ${['','곡물류','유제품','당류','유지류','향신료','기타'].map(c=>`<option${item?.category===c?' selected':''}>${c}</option>`).join('')}
-        </select>
-      </div>
       <div class="fl"><div class="fl-lbl">단위</div>
-        <select id="mf-unit" class="finput">
-          ${['kg','g','L','ml','ea','box','pk'].map(u=>`<option${item?.unit===u?' selected':''}>${u}</option>`).join('')}
+        <select id="mf-unit" class="finput" onchange="const l=document.getElementById('mf-unit-label');if(l)l.textContent=this.value">
+          ${['kg','g','L','ml','ea','box','pk','CAN'].map(u=>`<option${item?.unit===u?' selected':''}>${u}</option>`).join('')}
         </select>
       </div>
     </div>
     <div class="frow">
       <div class="fl"><div class="fl-lbl">안전재고</div><input id="mf-safety" class="finput" type="number" value="${item?.safety_stock||0}"/></div>
       <div class="fl"><div class="fl-lbl">단가(원)</div><input id="mf-price" class="finput" type="number" value="${item?.unit_price||''}"/></div>
+    </div>
+    <div class="fl" style="margin-top:4px">
+      <div class="fl-lbl">단위환산 <span style="font-size:11px;color:var(--gray-md)">(선택 단위 → kg)</span></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="font-size:13px;color:var(--gray)">1</span>
+        <span id="mf-unit-label" style="font-size:13px;font-weight:600;color:var(--teal-dk)">${item?.unit||'kg'}</span>
+        <span style="font-size:13px;color:var(--gray)">=</span>
+        <input id="mf-conv-qty" class="finput" type="number" step="0.001" style="width:110px" placeholder="미입력 시 환산 없음" value="${item?.unit_conv_qty||''}"/>
+        <span style="font-size:13px;color:var(--gray)">kg</span>
+      </div>
     </div>
     <div class="fl"><div class="fl-lbl">비고</div><textarea id="mf-desc" class="finput" style="min-height:56px">${item?.description||''}</textarea></div>
     <div class="fl"><div class="fl-lbl">상태</div>
@@ -4176,32 +4170,25 @@ const masterFormHtml = {
       <div class="fl"><div class="fl-lbl">품목명 <span class="req">*</span></div><input id="mf-name" class="finput" value="${item?.name||''}" required/></div>
     </div>
     <div class="frow">
-      <div class="fl"><div class="fl-lbl">분류</div><input id="mf-category" class="finput" value="${item?.category||''}"/></div>
       <div class="fl"><div class="fl-lbl">단위</div>
-        <select id="mf-unit" class="finput">
-          ${['%','kg','g','L','ml','ea','box','pk'].map(u=>`<option${item?.unit===u?' selected':''}>${u}</option>`).join('')}
+        <select id="mf-unit" class="finput" onchange="const l=document.getElementById('mf-unit-label');if(l)l.textContent=this.value">
+          ${['%','kg','g','L','ml','ea','box','pk','CAN'].map(u=>`<option${item?.unit===u?' selected':''}>${u}</option>`).join('')}
         </select>
+      </div>
+    </div>
+    <div class="fl" style="margin-top:4px">
+      <div class="fl-lbl">단위환산 <span style="font-size:11px;color:var(--gray-md)">(선택 단위 → kg)</span></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="font-size:13px;color:var(--gray)">1</span>
+        <span id="mf-unit-label" style="font-size:13px;font-weight:600;color:var(--teal-dk)">${item?.unit||'kg'}</span>
+        <span style="font-size:13px;color:var(--gray)">=</span>
+        <input id="mf-conv-qty" class="finput" type="number" step="0.001" style="width:110px" placeholder="미입력 시 환산 없음" value="${item?.unit_conv_qty||''}"/>
+        <span style="font-size:13px;color:var(--gray)">kg</span>
       </div>
     </div>
     <div class="frow">
       <div class="fl"><div class="fl-lbl">기준수량</div><input id="mf-stdqty" class="finput" type="number" value="${item?.standard_qty||''}"/></div>
       <div class="fl"><div class="fl-lbl">단가(원)</div><input id="mf-price" class="finput" type="number" value="${item?.unit_price||''}"/></div>
-    </div>
-    <div class="fl" style="margin-top:4px">
-      <div class="fl-lbl">단위환산 <span style="font-size:11px;color:var(--gray-md)">(예: 1box=100ea, 1ea=500g → 기준 kg)</span></div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <span style="font-size:13px;color:var(--gray)">1단위 =</span>
-        <input id="mf-conv-qty" class="finput" type="number" step="0.001" style="width:80px" placeholder="수량" value="${item?.unit_conv_qty||''}"/>
-        <select id="mf-conv-unit" class="finput" style="width:76px">
-          ${['','kg','g','L','ml','ea'].map(u=>`<option value="${u}"${(item?.unit_conv_unit||'')=== u?' selected':''}>${u||'—'}</option>`).join('')}
-        </select>
-        <span style="font-size:12px;color:var(--gray-md)">ea → 중량:</span>
-        <span style="font-size:13px;color:var(--gray)">1ea =</span>
-        <input id="mf-conv2-qty" class="finput" type="number" step="0.001" style="width:80px" placeholder="수량" value="${item?.unit_conv2_qty||''}"/>
-        <select id="mf-conv2-unit" class="finput" style="width:76px">
-          ${['','kg','g','L','ml'].map(u=>`<option value="${u}"${(item?.unit_conv2_unit||'')=== u?' selected':''}>${u||'—'}</option>`).join('')}
-        </select>
-      </div>
     </div>
     <div class="fl"><div class="fl-lbl">비고</div><textarea id="mf-desc" class="finput" style="min-height:56px">${item?.description||''}</textarea></div>
     <div class="fl"><div class="fl-lbl">상태</div>
@@ -4217,31 +4204,20 @@ const masterFormHtml = {
       <div class="fl"><div class="fl-lbl">제품명 <span class="req">*</span></div><input id="mf-name" class="finput" value="${item?.name||''}" required/></div>
     </div>
     <div class="frow">
-      <div class="fl"><div class="fl-lbl">분류</div>
-        <select id="mf-category" class="finput">
-          ${['','식빵류','과자류','케이크류','파이류','기타'].map(c=>`<option${item?.category===c?' selected':''}>${c}</option>`).join('')}
-        </select>
-      </div>
       <div class="fl"><div class="fl-lbl">단위</div>
-        <select id="mf-unit" class="finput">
-          ${['%','kg','g','L','ml','ea','box','pk'].map(u=>`<option${item?.unit===u?' selected':''}>${u}</option>`).join('')}
+        <select id="mf-unit" class="finput" onchange="const l=document.getElementById('mf-unit-label');if(l)l.textContent=this.value">
+          ${['%','kg','g','L','ml','ea','box','pk','CAN'].map(u=>`<option${item?.unit===u?' selected':''}>${u}</option>`).join('')}
         </select>
       </div>
     </div>
     <div class="fl" style="margin-top:4px">
-      <div class="fl-lbl">단위환산 <span style="font-size:11px;color:var(--gray-md)">(예: 1box=100ea, 1ea=500g → 기준 kg)</span></div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <span style="font-size:13px;color:var(--gray)">1단위 =</span>
-        <input id="mf-conv-qty" class="finput" type="number" step="0.001" style="width:80px" placeholder="수량" value="${item?.unit_conv_qty||''}"/>
-        <select id="mf-conv-unit" class="finput" style="width:76px">
-          ${['','kg','g','L','ml','ea'].map(u=>`<option value="${u}"${(item?.unit_conv_unit||'')=== u?' selected':''}>${u||'—'}</option>`).join('')}
-        </select>
-        <span style="font-size:12px;color:var(--gray-md)">ea → 중량:</span>
-        <span style="font-size:13px;color:var(--gray)">1ea =</span>
-        <input id="mf-conv2-qty" class="finput" type="number" step="0.001" style="width:80px" placeholder="수량" value="${item?.unit_conv2_qty||''}"/>
-        <select id="mf-conv2-unit" class="finput" style="width:76px">
-          ${['','kg','g','L','ml'].map(u=>`<option value="${u}"${(item?.unit_conv2_unit||'')=== u?' selected':''}>${u||'—'}</option>`).join('')}
-        </select>
+      <div class="fl-lbl">단위환산 <span style="font-size:11px;color:var(--gray-md)">(선택 단위 → kg)</span></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="font-size:13px;color:var(--gray)">1</span>
+        <span id="mf-unit-label" style="font-size:13px;font-weight:600;color:var(--teal-dk)">${item?.unit||'%'}</span>
+        <span style="font-size:13px;color:var(--gray)">=</span>
+        <input id="mf-conv-qty" class="finput" type="number" step="0.001" style="width:110px" placeholder="미입력 시 환산 없음" value="${item?.unit_conv_qty||''}"/>
+        <span style="font-size:13px;color:var(--gray)">kg</span>
       </div>
     </div>
     <div class="fl"><div class="fl-lbl">판매단가(원)</div><input id="mf-price" class="finput" type="number" value="${item?.unit_price||''}"/></div>
@@ -4345,29 +4321,27 @@ function getMasterFormData(type) {
   const gn = id => { const v = document.getElementById(id)?.value; return v ? parseFloat(v) : null; };
   if (type === 'material') return {
     material_code: g('mf-code'), name: g('mf-name'),
-    category: g('mf-category'), unit: g('mf-unit') || 'kg',
+    unit: g('mf-unit') || 'kg',
     safety_stock: gn('mf-safety') || 0, unit_price: gn('mf-price'),
     description: g('mf-desc'), status: g('mf-status') || 'active',
+    unit_conv_qty: gn('mf-conv-qty'),
+    unit_conv_unit: gn('mf-conv-qty') ? 'kg' : null,
   };
   if (type === 'semi') return {
     code: g('mf-code'), name: g('mf-name'),
-    category: g('mf-category'), unit: g('mf-unit') || 'kg',
+    unit: g('mf-unit') || 'kg',
     standard_qty: gn('mf-stdqty'), unit_price: gn('mf-price'),
     description: g('mf-desc'), status: g('mf-status') || 'active',
     unit_conv_qty: gn('mf-conv-qty'),
-    unit_conv_unit: g('mf-conv-unit') || null,
-    unit_conv2_qty: gn('mf-conv2-qty'),
-    unit_conv2_unit: g('mf-conv2-unit') || null,
+    unit_conv_unit: gn('mf-conv-qty') ? 'kg' : null,
   };
   if (type === 'product') return {
     code: g('mf-code'), name: g('mf-name'),
-    category: g('mf-category'), unit: g('mf-unit') || 'ea',
+    unit: g('mf-unit') || 'ea',
     unit_price: gn('mf-price'),
     description: g('mf-desc'), status: g('mf-status') || 'active',
     unit_conv_qty: gn('mf-conv-qty'),
-    unit_conv_unit: g('mf-conv-unit') || null,
-    unit_conv2_qty: gn('mf-conv2-qty'),
-    unit_conv2_unit: g('mf-conv2-unit') || null,
+    unit_conv_unit: gn('mf-conv-qty') ? 'kg' : null,
   };
   if (type === 'partner') return {
     name: g('mf-name'), business_number: g('mf-bizno'),
@@ -4538,7 +4512,6 @@ function renderMatSupplierTags() {
 // ── 제품 마스터: BOM 컬럼/버튼 포함 렌더링 ──────────
 async function loadProductMaster() {
   const search = document.getElementById('prod-search')?.value || '';
-  const cat    = document.getElementById('prod-cat-filter')?.value || '';
   const stat   = document.getElementById('prod-status-filter')?.value || '';
   let url = '/master/products?';
   if (search) url += `search=${encodeURIComponent(search)}&`;
@@ -4547,13 +4520,11 @@ async function loadProductMaster() {
   const data = await apiFetch(url);
   if (!data) return;
 
-  const filtered = cat ? data.filter(p => p.category === cat) : data;
   const tbody = document.getElementById('prod-tbody');
-  if (tbody) tbody.innerHTML = filtered.map(p => `
+  if (tbody) tbody.innerHTML = data.map(p => `
     <tr>
       <td><span class="lot">${p.code}</span></td>
       <td style="font-weight:700">${p.name}<br/><span style="font-size:11px;color:var(--gray)">${p.description||''}</span></td>
-      <td>${p.category||'—'}</td>
       <td>${p.unit}</td>
       <td class="r">${p.unit_price ? p.unit_price.toLocaleString()+'원' : '—'}</td>
       <td>${statusBdg(p.status)}</td>
@@ -4628,7 +4599,10 @@ async function openBOMModal(productId, productName) {
         </div>
       </div>
       <div class="fl" style="margin-bottom:10px"><div class="fl-lbl">비고</div><input id="bom-note" class="finput" placeholder=""/></div>
-      <button class="btn btn-primary btn-sm" onclick="addBOMItem(${productId})">저장</button>
+      <button class="btn btn-primary btn-sm" onclick="addBOMItem(${productId})">추가</button>
+    </div>
+    <div style="margin-top:12px;text-align:right">
+      <button class="btn btn-ghost" onclick="closeBOMModal();loadProductMaster()">완료</button>
     </div>`;
 
   // 품목 목록 저장 for select switch (자기 자신 제외)
@@ -4755,7 +4729,10 @@ async function openProductProcessModal(productId, productName) {
       </div>
       <div class="fl" style="margin-bottom:10px"><div class="fl-lbl">메모</div><input id="pp-note" class="finput" placeholder=""/></div>
       <button class="btn btn-primary btn-sm" onclick="addProductProcess(${productId})">+ 공정 추가</button>
-    </div>` : `<div style="text-align:center;padding:16px;color:var(--gray-md);font-size:13px">등록된 공정이 없습니다. 먼저 <a onclick="closePPModal();goApp('process-master')" style="color:var(--teal);cursor:pointer">공정 관리</a>에서 공정을 등록해주세요.</div>`}`;
+    </div>` : `<div style="text-align:center;padding:16px;color:var(--gray-md);font-size:13px">등록된 공정이 없습니다. 먼저 <a onclick="closePPModal();goApp('process-master')" style="color:var(--teal);cursor:pointer">공정 관리</a>에서 공정을 등록해주세요.</div>`}
+    <div style="margin-top:12px;text-align:right">
+      <button class="btn btn-ghost" onclick="closePPModal();loadProductMaster()">완료</button>
+    </div>`;
 
   modal.classList.remove('hidden');
 }
@@ -4954,7 +4931,10 @@ async function openSemiBOMModal(semiId, semiName) {
         </div>
       </div>
       <div class="fl" style="margin-bottom:10px"><div class="fl-lbl">비고</div><input id="semi-bom-note" class="finput"/></div>
-      <button class="btn btn-primary btn-sm" onclick="addSemiBOMItem(${semiId})">저장</button>
+      <button class="btn btn-primary btn-sm" onclick="addSemiBOMItem(${semiId})">추가</button>
+    </div>
+    <div style="margin-top:12px;text-align:right">
+      <button class="btn btn-ghost" onclick="closeBOMModal();loadSemiMaster()">완료</button>
     </div>`;
 
   inner._semiMaterials = materials || [];
@@ -5047,7 +5027,10 @@ async function openSemiProcessModal(semiId, semiName) {
       </div>
       <div class="fl" style="margin-bottom:10px"><div class="fl-lbl">메모</div><input id="semi-pp-note" class="finput"/></div>
       <button class="btn btn-primary btn-sm" onclick="addSemiProcess(${semiId})">+ 공정 추가</button>
-    </div>` : '<div style="text-align:center;padding:12px;color:var(--gray-md);font-size:13px">공정 관리에서 먼저 공정을 등록하세요.</div>'}`;
+    </div>` : '<div style="text-align:center;padding:12px;color:var(--gray-md);font-size:13px">공정 관리에서 먼저 공정을 등록하세요.</div>'}
+    <div style="margin-top:12px;text-align:right">
+      <button class="btn btn-ghost" onclick="closePPModal();loadSemiMaster()">완료</button>
+    </div>`;
   modal.classList.remove('hidden');
 }
 
@@ -5210,7 +5193,7 @@ async function loadSaengsanIlji() {
   const _td = (content, align) =>
     `<td style="border:1px solid #999;padding:6px 8px;height:28px${align ? ';text-align:'+align : ''}">${content}</td>`;
   const _emptyRow = () =>
-    `<tr>${_td('')}${_td('')}${_td('')}${_td('')}${_td('')}${_td('')}${_td('')}</tr>`;
+    `<tr>${_td('')}${_td('')}${_td('')}${_td('')}${_td('')}${_td('')}</tr>`;
 
   titleEl.textContent = `( ${month}월 ) 생산일지`;
   tbody.innerHTML = Array.from({length: TOTAL}, _emptyRow).join('');
@@ -5224,7 +5207,6 @@ async function loadSaengsanIlji() {
     `<tr>
       ${_td(r.production_date, 'center')}
       ${_td(r.product_name)}
-      ${_td(r.product_unit, 'center')}
       ${_td(r.produced_quantity != null ? r.produced_quantity.toLocaleString() : '', 'right')}
       ${_td(r.workers, 'center')}
       ${_td(r.expiry_date, 'center')}
@@ -5252,7 +5234,6 @@ function printSaengsanIlji() {
     `<tr>
       ${_pt(r.production_date,  NW+'text-align:center')}
       ${_pt(r.product_name)}
-      ${_pt(r.product_unit,     NW+'text-align:center')}
       ${_pt(r.produced_quantity != null ? r.produced_quantity.toLocaleString() : '', NW+'text-align:right')}
       ${_pt(r.workers,          NW+'text-align:center')}
       ${_pt(r.expiry_date,      NW+'text-align:center')}
@@ -5261,7 +5242,7 @@ function printSaengsanIlji() {
 
   const padRows = Array.from({length: Math.max(0, TOTAL - rows.length)}, () =>
     `<tr>
-      ${_pt('','height:22px')}${_pt('')}${_pt('')}${_pt('')}${_pt('')}${_pt('')}${_pt('')}
+      ${_pt('','height:22px')}${_pt('')}${_pt('')}${_pt('')}${_pt('')}${_pt('')}
     </tr>`).join('');
 
   const w = window.open('', '_blank');
@@ -5271,12 +5252,11 @@ function printSaengsanIlji() {
       body{font-family:'Malgun Gothic',sans-serif;font-size:11px;margin:12mm 12mm 8mm}
       table{border-collapse:collapse;width:100%;table-layout:fixed}
       colgroup col.c-date{width:14%}
-      colgroup col.c-name{width:22%}
-      colgroup col.c-pkg {width:16%}
-      colgroup col.c-qty {width:9%}
-      colgroup col.c-wkr {width:10%}
+      colgroup col.c-name{width:30%}
+      colgroup col.c-qty {width:10%}
+      colgroup col.c-wkr {width:11%}
       colgroup col.c-exp {width:14%}
-      colgroup col.c-note{width:15%}
+      colgroup col.c-note{width:21%}
       th{border:1px solid #333;padding:6px 4px;background:#f0f0f0;text-align:center;word-break:keep-all}
       td{border:1px solid #333;padding:5px 6px}
       tr{height:22px}
@@ -5296,11 +5276,11 @@ function printSaengsanIlji() {
     <h1>${titleText}</h1>
     <table>
       <colgroup>
-        <col class="c-date"/><col class="c-name"/><col class="c-pkg"/>
+        <col class="c-date"/><col class="c-name"/>
         <col class="c-qty"/><col class="c-wkr"/><col class="c-exp"/><col class="c-note"/>
       </colgroup>
       <thead><tr>
-        <th>생산일자</th><th>생산재품명</th><th>포장방법 및 단위</th>
+        <th>생산일자</th><th>생산제품명</th>
         <th>생산수량</th><th>작업인원</th><th>소비기한</th><th>특이사항</th>
       </tr></thead>
       <tbody>${filledRows}${padRows}</tbody>

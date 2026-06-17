@@ -57,6 +57,8 @@ class Material(Base):
     unit_price = Column(Float)
     description = Column(Text)
     status = Column(String, default="active")
+    unit_conv_qty = Column(Float)
+    unit_conv_unit = Column(String)
     user_id = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -572,6 +574,9 @@ def migrate_db():
         "ALTER TABLE productions ADD COLUMN expiry_date DATETIME",
         "ALTER TABLE productions ADD COLUMN workers TEXT",
         # 검사 담당자 테이블 생성은 create_all로 처리
+        # 원재료 단위환산
+        "ALTER TABLE materials ADD COLUMN unit_conv_qty REAL",
+        "ALTER TABLE materials ADD COLUMN unit_conv_unit TEXT",
     ]
     with engine.connect() as conn:
         for sql in migrations:

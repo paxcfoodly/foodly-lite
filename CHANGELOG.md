@@ -5,6 +5,29 @@
 
 ---
 
+## 2026-06-16
+
+### 로컬 5대 기능 테스트 (헤드리스 브라우저)
+- 로그인 / 원료 입고 / 생산실적 입력(BOM 자동차감) / 출고 / 대시보드(메인+매출) 전체 동작 확인
+- 테스트 시나리오: BOM 0.5kg/개 등록 → 생산 10개 입력 시 5kg 정확히 차감 → 출고 3개 시 재고·매출 정상 반영
+- 콘솔 에러 없음, 발견된 버그는 아래 항목으로 별도 수정
+
+### 제품/반제품 코드 중복 등록 시 500 에러 → 400으로 수정
+- `master_create_product`/`master_create_semi`에서 중복 `code`로 등록 시 `IntegrityError`가 그대로 노출되던 문제
+- `try/except IntegrityError` 추가, 한글 에러 메시지(400)로 변경
+
+### 반제품·완제품·공정 코드 중복 검사를 회사별(테넌트별)로 분리 (핵심 버그 수정)
+- **증상**: 반제품/공정 엑셀 일괄등록 시 "이미 사용 중인 코드입니다" 에러. 엑셀 양식의 샘플 코드(`SEM-001`, `PRC-001`)가 모든 회사에 공통이라, 한 회사가 그 코드로 등록하면 다른 회사는 절대 같은 코드를 못 쓰는 구조였음
+- **원인**: `SemiProduct.code`/`FinishedProduct.code`/`Process.code`에 `unique=True`가 테이블 전체(전 회사 공용) 기준으로 걸려 있었음 — 멀티테넌시 스코프(`user_id`)를 무시한 전역 제약
+- **수정**: `database.py` — 세 모델 모두 컬럼 단위 `unique=True` 제거, `UniqueConstraint('user_id', 'code')` 복합 제약으로 교체 (같은 회사 내 중복은 차단, 다른 회사와는 코드 겹쳐도 허용)
+- **마이그레이션**: SQLite는 `ALTER TABLE`로 인라인 UNIQUE를 못 지워서 테이블 재생성 방식(`_drop_legacy_code_unique_sqlite`) 추가, PostgreSQL은 `_migrate_postgres()`에서 `DROP/ADD CONSTRAINT`로 직접 처리 (기존엔 Postgres 마이그레이션이 통째로 스킵되고 있던 것도 같이 고침)
+- **부수 정리**: 엑셀 일괄등록(`import_excel`)의 `product` 분기에 있던 "코드 중복 시 코드 없이 등록" 임시 우회 로직 제거 — 전역 기준으로 중복을 체크해서, 회사별 분리 이후엔 오히려 다른 회사 코드와 겹친다는 이유만으로 정상 코드를 지워버리는 역효과가 있었음
+- **검증**: 같은 회사 중복 코드 → 정상 거부 / 다른 회사 동일 코드 → 정상 허용, 두 모델·세 테이블 모두 직접 DB 테스트 + 실제 버그 재현 시나리오로 확인
+- **영향 없음 확인**: 거래처관리(Supplier)/원재료관리(Material)는 `code` 필드에 처음부터 DB 유니크 제약이 없어 이 버그 패턴 자체가 발생할 수 없는 구조였음
+- **남은 동일 패턴 (미수정, 보고된 적 없음)**: `Recipe.product_code`(레거시), `Device.device_code`, `Receipt.receipt_number`, `Shipment.shipment_number`, `Production.lot_number` — 필요 시 동일한 마이그레이션 패턴 재사용 가능
+
+---
+
 ## 2026-06-13
 
 ### 버그 수정

@@ -2087,6 +2087,7 @@ def master_list_materials(
             "safety_stock": m.safety_stock, "current_stock": m.current_stock,
             "unit_price": m.unit_price, "description": m.description,
             "status": m.status or "active", "stock_status": s,
+            "unit_conv_qty": m.unit_conv_qty, "unit_conv_unit": m.unit_conv_unit,
         })
     return result
 
