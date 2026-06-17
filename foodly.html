@@ -2502,7 +2502,10 @@ async function runLedger() {
   renderLedger(data);
 }
 
+let _ledgerData = null;
+
 function renderLedger(data) {
+  _ledgerData = data;
   const _td = (content, style='') =>
     `<td style="border:1px solid #ccc;padding:5px 6px;${style}">${content}</td>`;
   const typeLabel = {'입고':'입고','생산사용':'생산사용','재고조정':'조정'};
@@ -2593,26 +2596,66 @@ const _DOC_CSS = `
 
 // ── 수불대장 PDF(인쇄)
 function ledgerPrint() {
-  const content = document.getElementById('ledger-content');
-  if (!content || content.style.display === 'none') { alert('먼저 조회 기간을 선택하고 조회하세요.'); return; }
+  if (!_ledgerData) { alert('먼저 조회 기간을 선택하고 조회하세요.'); return; }
   const df = document.getElementById('ledger-date-from')?.value || '';
   const dt = document.getElementById('ledger-date-to')?.value || '';
   const company = localStorage.getItem('foodly_company') || '';
   const bizNum  = localStorage.getItem('foodly_biz_number') || '';
-  const tableHtml = document.getElementById('ledger-table')?.outerHTML || '';
-  const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>원료수불대장</title>
-    <style>${_DOC_CSS}</style></head><body>
+
+  const PER = 20;
+  const typeLabel = {'입고':'입고','생산사용':'생산사용','재고조정':'조정'};
+  const entries = _ledgerData.entries || [];
+  const pages = Math.max(1, Math.ceil(entries.length / PER));
+
+  const TH = 'height:26px';
+  const mkRow = e => `<tr style="${TH}">
+    <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;text-align:center">${e.date}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;font-weight:600">${e.material_name}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;text-align:center">${e.unit}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;text-align:center">${typeLabel[e.type]||e.type}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px">${e.source||''}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;text-align:right;color:#1B7A5E;font-weight:700">${e.in_qty>0?e.in_qty.toLocaleString():''}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;text-align:right;color:#7B5CF0;font-weight:700">${e.out_qty>0?e.out_qty.toLocaleString():''}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;text-align:right;font-weight:700">${e.balance.toLocaleString()}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px">${e.note||''}</td>
+  </tr>`;
+  const emptyRow = `<tr style="${TH}"><td style="border:1px solid #D3D1C7">&nbsp;</td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td></tr>`;
+
+  const thead = `<thead><tr>
+    <th>날짜</th><th>원료명</th><th>단위</th><th>구분</th><th>입고처/출처</th>
+    <th>입고량</th><th>출고량</th><th>잔고</th><th>비고</th>
+  </tr></thead>`;
+  const colgroup = `<colgroup>
+    <col style="width:80px"/><col style="width:130px"/><col style="width:45px"/>
+    <col style="width:75px"/><col style="width:120px"/><col style="width:75px"/>
+    <col style="width:75px"/><col style="width:75px"/><col/>
+  </colgroup>`;
+
+  const header = (pg, total) => `
     <div class="doc-header">
       <div class="doc-header-title">원료 수불대장</div>
       <div class="doc-header-info">
-        ${company ? company+'<br>' : ''}
-        ${bizNum ? '사업자번호: '+bizNum+'<br>' : ''}
-        조회기간: ${df} ~ ${dt}
+        ${company ? company+'<br>' : ''}${bizNum ? '사업자번호: '+bizNum+'<br>' : ''}
+        조회기간: ${df} ~ ${dt}&nbsp;&nbsp;${total>1?`(${pg}/${total}페이지)`:''}
       </div>
-    </div>
-    <div class="doc-body">${tableHtml}</div>
-  </body></html>`);
+    </div>`;
+
+  let pagesHtml = '';
+  for (let p = 0; p < pages; p++) {
+    const slice = entries.slice(p*PER, (p+1)*PER);
+    const filled = slice.map(mkRow).join('');
+    const empty = Array(PER - slice.length).fill(emptyRow).join('');
+    pagesHtml += `<div${p>0?' style="page-break-before:always"':''}>
+      ${header(p+1, pages)}
+      <div class="doc-body">
+        <table style="border-collapse:collapse;width:100%;table-layout:fixed">${colgroup}${thead}<tbody>${filled}${empty}</tbody></table>
+      </div>
+    </div>`;
+  }
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>원료수불대장</title>
+    <style>${_DOC_CSS}tbody tr{height:26px!important}</style></head><body>${pagesHtml}</body></html>`);
   w.document.close();
   w.print();
 }
@@ -2743,6 +2786,8 @@ async function initIngodaejang() {
   document.getElementById('ingoda-date-to').value   = today;
 }
 
+let _ingodaData = null;
+
 async function loadIngodaejang() {
   const matId = document.getElementById('ingoda-material-sel')?.value;
   if (!matId) return;
@@ -2753,6 +2798,7 @@ async function loadIngodaejang() {
   if (dt) params.set('date_to', dt);
   const data = await apiFetch('/receipts/ingodaejang?' + params.toString());
   if (!data) return;
+  _ingodaData = data;
 
   document.getElementById('ingoda-empty').style.display = 'none';
   document.getElementById('ingoda-content').style.display = '';
@@ -2821,30 +2867,75 @@ async function downloadSaengsanIljiExcel() {
 }
 
 function printIngodaejang() {
-  const content = document.getElementById('ingoda-content');
-  if (!content || content.style.display === 'none') { alert('먼저 원료를 선택하고 조회하세요.'); return; }
+  if (!_ingodaData) { alert('먼저 원료를 선택하고 조회하세요.'); return; }
   const company = localStorage.getItem('foodly_company') || '';
   const bizNum  = localStorage.getItem('foodly_biz_number') || '';
-  const matname = document.getElementById('ingoda-matname')?.textContent || '';
-  const tableHtml = document.getElementById('ingoda-table')?.outerHTML || '';
-  const ncTable   = document.getElementById('ingoda-nc-table')?.outerHTML || '';
+  const matname = _ingodaData.material_name || '';
+
+  const PER = 20;
+  const rows = _ingodaData.rows || [];
+  const pages = Math.max(1, Math.ceil(rows.length / PER));
+  const TH = 'height:26px';
+  const chkPrint = v => v === true ? '적합' : v === false ? '부적합' : '';
+
+  const mkRow = r => `<tr style="${TH}">
+    <td style="border:1px solid #D3D1C7;padding:4px 5px;font-size:11px;text-align:center">${r.delivery_date}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 5px;font-size:11px;text-align:center">${r.supplier_name}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 5px;font-size:11px;text-align:center">${chkPrint(r.packaging_ok)}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 5px;font-size:11px;text-align:center">${r.expiry_date||''}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 5px;font-size:11px;text-align:center">${chkPrint(r.visual_ok)}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 5px;font-size:11px;text-align:center">${chkPrint(r.judgment_ok)}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 5px;font-size:11px;text-align:center">${r.inspector||''}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 5px;font-size:11px;text-align:center">${r.confirmer||''}</td>
+  </tr>`;
+  const emptyRow = `<tr style="${TH}"><td style="border:1px solid #D3D1C7">&nbsp;</td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td></tr>`;
+
+  const thead = `<thead><tr>
+    <th>입고일</th><th>구매처/제조원</th><th>포장상태</th><th>소비기한</th>
+    <th>육안검사</th><th>판정</th><th>담당</th><th>확인</th>
+  </tr></thead>`;
+  const colgroup = `<colgroup>
+    <col style="width:70px"/><col style="width:100px"/><col style="width:90px"/>
+    <col style="width:80px"/><col style="width:90px"/><col style="width:90px"/>
+    <col style="width:60px"/><col style="width:60px"/>
+  </colgroup>`;
+
+  // NC table (부적합 — no pagination, show all)
+  const ncRows = (_ingodaData.nonconformances || []).map(nc => `<tr>
+    <td style="border:1px solid #D3D1C7;padding:4px 5px;font-size:11px;text-align:center">${nc.date}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 5px;font-size:11px">${nc.content}${nc.action?'<br>▶ 조치: '+nc.action:''}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 5px;font-size:11px;text-align:center">${nc.inspector||''}</td>
+  </tr>`).join('') || `<tr><td colspan="3" style="border:1px solid #D3D1C7;padding:8px;text-align:center;font-size:11px;color:#999">부적합 이력이 없습니다</td></tr>`;
+  const ncHtml = `
+    <div class="doc-section">부적합내역 및 조치사항</div>
+    <table style="border-collapse:collapse;width:100%">
+      <thead><tr><th>년/월/일</th><th>부적합내역 및 조치사항</th><th>담당</th></tr></thead>
+      <tbody>${ncRows}</tbody>
+    </table>`;
+
+  let pagesHtml = '';
+  for (let p = 0; p < pages; p++) {
+    const slice = rows.slice(p*PER, (p+1)*PER);
+    const filled = slice.map(mkRow).join('');
+    const empty = Array(PER - slice.length).fill(emptyRow).join('');
+    pagesHtml += `<div${p>0?' style="page-break-before:always"':''}>
+      <div class="doc-header">
+        <div class="doc-header-title">원재료 입고 검사지</div>
+        <div class="doc-header-info">
+          ${company?company+'<br>':''}${bizNum?'사업자번호: '+bizNum+'<br>':''}
+          원료명: ${matname}${pages>1?' ('+( p+1)+'/'+pages+'페이지)':''}
+        </div>
+      </div>
+      <div class="doc-body">
+        <table style="border-collapse:collapse;width:100%;table-layout:fixed">${colgroup}${thead}<tbody>${filled}${empty}</tbody></table>
+        ${p===pages-1 ? ncHtml : ''}
+      </div>
+    </div>`;
+  }
+
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>입고대장</title>
-    <style>${_DOC_CSS}</style></head><body>
-    <div class="doc-header">
-      <div class="doc-header-title">원재료 입고 검사지</div>
-      <div class="doc-header-info">
-        ${company ? company+'<br>' : ''}
-        ${bizNum ? '사업자번호: '+bizNum+'<br>' : ''}
-        원료명: ${matname}
-      </div>
-    </div>
-    <div class="doc-body">
-      ${tableHtml}
-      <div class="doc-section">부적합내역 및 조치사항</div>
-      ${ncTable}
-    </div>
-  </body></html>`);
+    <style>${_DOC_CSS}tbody tr{height:26px!important}</style></head><body>${pagesHtml}</body></html>`);
   w.document.close();
   w.print();
 }
@@ -5338,66 +5429,50 @@ async function loadSaengsanIlji() {
 
 function printSaengsanIlji() {
   const titleText = document.getElementById('ilji-title')?.textContent || '';
-  if (!titleText) { alert('먼저 조회하세요.'); return; }
+  if (!titleText || !_iljiData) { alert('먼저 조회하세요.'); return; }
 
-  const TOTAL = 20;
+  const PER = 20;
   const company = localStorage.getItem('foodly_company') || '';
   const bizNum  = localStorage.getItem('foodly_biz_number') || '';
-  const rows = (_iljiData?.rows || []).slice(0, TOTAL);
+  const allRows = _iljiData.rows || [];
+  const pages = Math.max(1, Math.ceil(allRows.length / PER));
+  const TH = 'height:26px';
+  const B = 'border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;';
 
-  // 출력용 셀: overflow 없이 내용 그대로 표시
-  const _pt = (content, style='') =>
-    `<td style="border:1px solid #333;padding:5px 6px;${style}">${content || ''}</td>`;
-  const NW = 'white-space:nowrap;';   // 줄바꿈 금지 (날짜·숫자 컬럼)
+  const mkRow = r => `<tr style="${TH}">
+    <td style="${B}text-align:center">${r.production_date||''}</td>
+    <td style="${B}">${r.product_name||''}</td>
+    <td style="${B}text-align:right">${r.produced_quantity!=null?r.produced_quantity.toLocaleString():''}</td>
+    <td style="${B}text-align:center">${r.workers||''}</td>
+    <td style="${B}text-align:center">${r.expiry_date||''}</td>
+    <td style="${B}">${r.note||''}</td>
+  </tr>`;
+  const emptyRow = `<tr style="${TH}"><td style="border:1px solid #D3D1C7">&nbsp;</td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td></tr>`;
+  const thead = `<thead><tr><th>생산일자</th><th>생산제품명</th><th>생산수량</th><th>작업인원</th><th>소비기한</th><th>특이사항</th></tr></thead>`;
+  const colgroup = `<colgroup><col style="width:14%"/><col style="width:30%"/><col style="width:10%"/><col style="width:11%"/><col style="width:14%"/><col/></colgroup>`;
 
-  const filledRows = rows.map(r =>
-    `<tr>
-      ${_pt(r.production_date,  NW+'text-align:center')}
-      ${_pt(r.product_name)}
-      ${_pt(r.produced_quantity != null ? r.produced_quantity.toLocaleString() : '', NW+'text-align:right')}
-      ${_pt(r.workers,          NW+'text-align:center')}
-      ${_pt(r.expiry_date,      NW+'text-align:center')}
-      ${_pt(r.note)}
-    </tr>`).join('');
-
-  const padRows = Array.from({length: Math.max(0, TOTAL - rows.length)}, () =>
-    `<tr>
-      ${_pt('','height:22px')}${_pt('')}${_pt('')}${_pt('')}${_pt('')}${_pt('')}
-    </tr>`).join('');
+  let pagesHtml = '';
+  for (let p = 0; p < pages; p++) {
+    const slice = allRows.slice(p*PER, (p+1)*PER);
+    const filled = slice.map(mkRow).join('');
+    const empty = Array(PER - slice.length).fill(emptyRow).join('');
+    pagesHtml += `<div${p>0?' style="page-break-before:always"':''}>
+      <div class="doc-header">
+        <div class="doc-header-title">${titleText}</div>
+        <div class="doc-header-info">
+          ${company?company+'<br>':''}${bizNum?'사업자번호: '+bizNum:''}
+          ${pages>1?'&nbsp;&nbsp;('+(p+1)+'/'+pages+'페이지)':''}
+        </div>
+      </div>
+      <div class="doc-body">
+        <table style="border-collapse:collapse;width:100%;table-layout:fixed">${colgroup}${thead}<tbody>${filled}${empty}</tbody></table>
+      </div>
+    </div>`;
+  }
 
   const w = window.open('', '_blank');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>생산일지</title>
-    <style>
-      ${_DOC_CSS}
-      table{table-layout:fixed}
-      colgroup col.c-date{width:14%}
-      colgroup col.c-name{width:30%}
-      colgroup col.c-qty {width:10%}
-      colgroup col.c-wkr {width:11%}
-      colgroup col.c-exp {width:14%}
-      colgroup col.c-note{width:21%}
-    </style></head><body>
-    <div class="doc-header">
-      <div class="doc-header-title">${titleText}</div>
-      <div class="doc-header-info">
-        ${company ? company+'<br>' : ''}
-        ${bizNum ? '사업자번호: '+bizNum : ''}
-      </div>
-    </div>
-    <div class="doc-body">
-      <table>
-        <colgroup>
-          <col class="c-date"/><col class="c-name"/>
-          <col class="c-qty"/><col class="c-wkr"/><col class="c-exp"/><col class="c-note"/>
-        </colgroup>
-        <thead><tr>
-          <th>생산일자</th><th>생산제품명</th>
-          <th>생산수량</th><th>작업인원</th><th>소비기한</th><th>특이사항</th>
-        </tr></thead>
-        <tbody>${filledRows}${padRows}</tbody>
-      </table>
-    </div>
-  </body></html>`);
+    <style>${_DOC_CSS}tbody tr{height:26px!important}</style></head><body>${pagesHtml}</body></html>`);
   w.document.close();
   w.print();
 }
@@ -6115,25 +6190,53 @@ function exportSalesCSV() {
 }
 
 function printSalesLedger() {
-  const area = document.getElementById('sales-ledger-print-area');
-  if (!area) return;
+  if (!_slRows.length) { alert('조회된 데이터가 없습니다.'); return; }
   const company = localStorage.getItem('foodly_company') || '';
   const bizNum  = localStorage.getItem('foodly_biz_number') || '';
   const df = document.getElementById('sl-date-from')?.value || '';
   const dt = document.getElementById('sl-date-to')?.value || '';
+
+  const PER = 20;
+  const pages = Math.max(1, Math.ceil(_slRows.length / PER));
+  const TH = 'height:26px';
+  const B = 'border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;';
+
+  const mkRow = r => `<tr style="${TH}">
+    <td style="${B}"><span class="lot">${r.shipment_number}</span></td>
+    <td style="${B}font-weight:700">${r.product_name}</td>
+    <td style="${B}"><span class="lot">${r.lot_number||'—'}</span></td>
+    <td style="${B}">${r.customer_name||'—'}</td>
+    <td style="${B}text-align:right">${(r.quantity||0).toLocaleString()} ${r.product_unit||''}</td>
+    <td style="${B}text-align:right">${r.unit_price?r.unit_price.toLocaleString()+'원':'—'}</td>
+    <td style="${B}text-align:right;font-weight:700;color:#0F6E56">${r.total_amount?r.total_amount.toLocaleString()+'원':'—'}</td>
+    <td style="${B}">${r.delivery_date||''}</td>
+  </tr>`;
+  const emptyRow = `<tr style="${TH}"><td style="border:1px solid #D3D1C7">&nbsp;</td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td><td style="border:1px solid #D3D1C7"></td></tr>`;
+  const thead = `<thead><tr><th>출고번호</th><th>제품명</th><th>로트번호</th><th>납품처</th><th class="r">수량</th><th class="r">단가</th><th class="r">금액</th><th>납품일</th></tr></thead>`;
+  const colgroup = `<colgroup><col style="width:130px"/><col/><col style="width:100px"/><col style="width:100px"/><col style="width:70px"/><col style="width:80px"/><col style="width:90px"/><col style="width:90px"/></colgroup>`;
+
+  let pagesHtml = '';
+  for (let p = 0; p < pages; p++) {
+    const slice = _slRows.slice(p*PER, (p+1)*PER);
+    const filled = slice.map(mkRow).join('');
+    const empty = Array(PER - slice.length).fill(emptyRow).join('');
+    pagesHtml += `<div${p>0?' style="page-break-before:always"':''}>
+      <div class="doc-header">
+        <div class="doc-header-title">매출 대장</div>
+        <div class="doc-header-info">
+          ${company?company+'<br>':''}${bizNum?'사업자번호: '+bizNum+'<br>':''}
+          ${df||dt?'조회기간: '+(df||'')+'~'+(dt||''):''}${pages>1?'&nbsp;&nbsp;('+(p+1)+'/'+pages+'페이지)':''}
+        </div>
+      </div>
+      <div class="doc-body">
+        <table style="border-collapse:collapse;width:100%;table-layout:fixed">${colgroup}${thead}<tbody>${filled}${empty}</tbody></table>
+      </div>
+    </div>`;
+  }
+
   const win = window.open('', '_blank', 'width=900,height=700');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>매출대장</title>
-    <style>${_DOC_CSS}</style></head><body>
-    <div class="doc-header">
-      <div class="doc-header-title">매출 대장</div>
-      <div class="doc-header-info">
-        ${company ? company+'<br>' : ''}
-        ${bizNum ? '사업자번호: '+bizNum+'<br>' : ''}
-        ${df||dt ? '조회기간: '+(df||'')+'~'+(dt||'') : ''}
-      </div>
-    </div>
-    <div class="doc-body">${area.innerHTML}</div>
-  </body></html>`);
+    <style>${_DOC_CSS}tbody tr{height:26px!important}</style></head><body>${pagesHtml}</body></html>`);
   win.document.close(); win.print();
 }
 
