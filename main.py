@@ -494,7 +494,7 @@ def explode_bom(product_id: int, produced_qty: float, db: Session,
 # ─────────────────────────────────────────
 @app.get("/api/materials")
 def list_materials(db: Session = Depends(get_db)):
-    items = db.query(Material).filter(Material.user_id == uid()).all()
+    items = db.query(Material).filter(Material.user_id == uid()).order_by(Material.name).all()
     result = []
     for m in items:
         status = "normal"
