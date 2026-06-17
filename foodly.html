@@ -2609,7 +2609,7 @@ function ledgerPrint() {
 
   const TH = 'height:26px';
   const mkRow = e => `<tr style="${TH}">
-    <td style="border:1px solid #D3D1C7;padding:4px 3px;font-size:8px;text-align:center;white-space:nowrap;overflow:hidden">${e.date}</td>
+    <td style="border:1px solid #D3D1C7;padding:4px 4px;font-size:8px;text-align:center;white-space:nowrap">${e.date}</td>
     <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;font-weight:600">${e.material_name}</td>
     <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;text-align:center">${e.unit}</td>
     <td style="border:1px solid #D3D1C7;padding:4px 6px;font-size:11px;text-align:center">${typeLabel[e.type]||e.type}</td>
@@ -2626,9 +2626,9 @@ function ledgerPrint() {
     <th>입고량</th><th>출고량</th><th>잔고</th><th>비고</th>
   </tr></thead>`;
   const colgroup = `<colgroup>
-    <col style="width:68px"/><col style="width:130px"/><col style="width:45px"/>
-    <col style="width:75px"/><col style="width:120px"/><col style="width:75px"/>
-    <col style="width:75px"/><col style="width:75px"/><col/>
+    <col style="width:76px"/><col style="width:130px"/><col style="width:45px"/>
+    <col style="width:70px"/><col style="width:115px"/><col style="width:72px"/>
+    <col style="width:72px"/><col style="width:72px"/><col/>
   </colgroup>`;
 
   const header = (pg, total) => `
