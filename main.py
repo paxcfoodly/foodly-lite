@@ -322,7 +322,48 @@ def admin_delete_user(user_id: int, db: Session = Depends(get_db)):
     u = db.query(TenantUser).filter(TenantUser.id == user_id, TenantUser.role == 'user').first()
     if not u:
         raise HTTPException(404, "User not found")
-    db.delete(u); db.commit()
+    uid = user_id
+
+    # 1단계: 부모 레코드 ID 수집 후 자식 테이블 먼저 삭제
+    receipt_ids = [r.id for r in db.query(Receipt.id).filter(Receipt.user_id == uid)]
+    if receipt_ids:
+        db.query(ReceiptNonconformance).filter(ReceiptNonconformance.receipt_id.in_(receipt_ids)).delete(synchronize_session=False)
+
+    supplier_ids = [s.id for s in db.query(Supplier.id).filter(Supplier.user_id == uid)]
+    if supplier_ids:
+        db.query(SalesLog).filter(SalesLog.supplier_id.in_(supplier_ids)).delete(synchronize_session=False)
+        db.query(MaterialSupplier).filter(MaterialSupplier.supplier_id.in_(supplier_ids)).delete(synchronize_session=False)
+
+    material_ids = [m.id for m in db.query(Material.id).filter(Material.user_id == uid)]
+    if material_ids:
+        db.query(MaterialSupplier).filter(MaterialSupplier.material_id.in_(material_ids)).delete(synchronize_session=False)
+
+    fp_ids = [fp.id for fp in db.query(FinishedProduct.id).filter(FinishedProduct.user_id == uid)]
+    if fp_ids:
+        db.query(ProductBOM).filter(ProductBOM.product_id.in_(fp_ids)).delete(synchronize_session=False)
+        db.query(ProductProcess).filter(ProductProcess.product_id.in_(fp_ids)).delete(synchronize_session=False)
+
+    sp_ids = [sp.id for sp in db.query(SemiProduct.id).filter(SemiProduct.user_id == uid)]
+    if sp_ids:
+        db.query(SemiProductBOM).filter(SemiProductBOM.semi_product_id.in_(sp_ids)).delete(synchronize_session=False)
+        db.query(SemiProductProcess).filter(SemiProductProcess.semi_product_id.in_(sp_ids)).delete(synchronize_session=False)
+
+    recipe_ids = [r.id for r in db.query(Recipe.id).filter(Recipe.user_id == uid)]
+    if recipe_ids:
+        db.query(RecipeIngredient).filter(RecipeIngredient.recipe_id.in_(recipe_ids)).delete(synchronize_session=False)
+
+    # 2단계: user_id 직접 보유 테이블 삭제
+    for Model in [
+        StockAdjustment, Shipment, Production, ProductionPlan,
+        Receipt, Device, InspectionStaff,
+        Recipe, Process, FinishedProduct, SemiProduct, Material, Supplier,
+        UserSession, LoginLog,
+    ]:
+        db.query(Model).filter(Model.user_id == uid).delete(synchronize_session=False)
+
+    # 3단계: 계정 삭제
+    db.delete(u)
+    db.commit()
     return {"ok": True}
 
 @app.get("/api/admin/login-logs")
