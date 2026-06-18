@@ -446,6 +446,20 @@ class UserSession(Base):
     expires_at = Column(DateTime, nullable=False)
 
 
+class LoginLog(Base):
+    __tablename__ = "login_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, nullable=False)
+    company_name = Column(String)
+    user_id = Column(Integer)
+    role = Column(String)
+    status = Column(String, nullable=False)   # success / fail
+    fail_reason = Column(String)
+    ip_address = Column(String)
+    user_agent = Column(String)
+    logged_at = Column(DateTime, default=datetime.utcnow)
+
+
 def ensure_admin(db):
     """paxc 관리자 계정이 없으면 생성"""
     if not db.query(TenantUser).filter(TenantUser.username == 'paxc').first():

@@ -517,7 +517,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 
 <!-- ══════════════ ADMIN PORTAL ══════════════ -->
 <div id="screen-admin" class="hidden" style="min-height:100vh;background:var(--gray-lt);padding:32px">
-  <div style="max-width:900px;margin:0 auto">
+  <div style="max-width:1000px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
       <div>
         <div style="font-size:22px;font-weight:800;color:var(--dark)">food<em style="color:var(--teal)">ly</em> 관리자</div>
@@ -525,16 +525,46 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       </div>
       <button class="btn btn-ghost btn-sm" onclick="doLogout()">로그아웃</button>
     </div>
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">회원사 계정 목록</div>
-        <button class="btn btn-primary btn-sm" onclick="openAdminUserModal(null)">+ 계정 추가</button>
+    <!-- 탭 -->
+    <div style="display:flex;gap:4px;margin-bottom:16px">
+      <button id="admin-tab-users" class="btn btn-primary btn-sm" onclick="adminTab('users')">회원사 계정</button>
+      <button id="admin-tab-logs" class="btn btn-ghost btn-sm" onclick="adminTab('logs')">로그인 이력</button>
+    </div>
+    <!-- 회원사 계정 탭 -->
+    <div id="admin-panel-users">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">회원사 계정 목록</div>
+          <button class="btn btn-primary btn-sm" onclick="openAdminUserModal(null)">+ 계정 추가</button>
+        </div>
+        <table class="tbl">
+          <colgroup><col style="width:120px"/><col style="width:180px"/><col style="width:140px"/><col style="width:120px"/><col style="width:110px"/><col style="width:60px"/><col/></colgroup>
+          <thead><tr><th>아이디</th><th>회사명</th><th>사업자등록번호</th><th>담당자</th><th>등록일</th><th>상태</th><th></th></tr></thead>
+          <tbody id="admin-user-tbody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--gray-md)">로딩 중...</td></tr></tbody>
+        </table>
       </div>
-      <table class="tbl">
-        <colgroup><col style="width:120px"/><col style="width:180px"/><col style="width:140px"/><col style="width:120px"/><col style="width:110px"/><col style="width:60px"/><col/></colgroup>
-        <thead><tr><th>아이디</th><th>회사명</th><th>사업자등록번호</th><th>담당자</th><th>등록일</th><th>상태</th><th></th></tr></thead>
-        <tbody id="admin-user-tbody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--gray-md)">로딩 중...</td></tr></tbody>
-      </table>
+    </div>
+    <!-- 로그인 이력 탭 -->
+    <div id="admin-panel-logs" style="display:none">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">로그인 이력</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="log-filter-username" class="finput" style="width:140px;height:32px;font-size:13px" placeholder="아이디 검색"/>
+            <select id="log-filter-status" class="finput" style="width:100px;height:32px;font-size:13px">
+              <option value="">전체</option>
+              <option value="success">성공</option>
+              <option value="fail">실패</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="loadLoginLogs()">조회</button>
+          </div>
+        </div>
+        <table class="tbl">
+          <colgroup><col style="width:150px"/><col style="width:120px"/><col style="width:160px"/><col style="width:70px"/><col style="width:70px"/><col style="width:130px"/><col/></colgroup>
+          <thead><tr><th>일시</th><th>아이디</th><th>회사명</th><th>구분</th><th>결과</th><th>IP</th><th>실패 사유</th></tr></thead>
+          <tbody id="admin-log-tbody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--gray-md)">조회 버튼을 눌러 이력을 불러오세요</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -2035,6 +2065,38 @@ async function apiFetch(path, options={}) {
 // ══════════════════════════════════════════════════════
 // 관리자 포탈 함수
 // ══════════════════════════════════════════════════════
+function adminTab(tab) {
+  document.getElementById('admin-panel-users').style.display = tab === 'users' ? '' : 'none';
+  document.getElementById('admin-panel-logs').style.display  = tab === 'logs'  ? '' : 'none';
+  document.getElementById('admin-tab-users').className = 'btn btn-sm ' + (tab === 'users' ? 'btn-primary' : 'btn-ghost');
+  document.getElementById('admin-tab-logs').className  = 'btn btn-sm ' + (tab === 'logs'  ? 'btn-primary' : 'btn-ghost');
+  if (tab === 'logs') loadLoginLogs();
+}
+
+async function loadLoginLogs() {
+  const token = localStorage.getItem('foodly_token') || '';
+  const username = document.getElementById('log-filter-username')?.value || '';
+  const status   = document.getElementById('log-filter-status')?.value   || '';
+  const params = new URLSearchParams({limit: 200});
+  if (username) params.set('username', username);
+  if (status)   params.set('status', status);
+  const res = await fetch('/api/admin/login-logs?' + params, {headers:{'X-Token':token}});
+  const tbody = document.getElementById('admin-log-tbody');
+  if (!res.ok) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--red)">권한 없음</td></tr>'; return; }
+  const logs = await res.json();
+  if (!logs.length) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--gray-md)">이력이 없습니다</td></tr>'; return; }
+  tbody.innerHTML = logs.map(l => `
+    <tr>
+      <td style="font-size:12px;color:var(--gray)">${l.logged_at}</td>
+      <td style="font-weight:700">${l.username}</td>
+      <td style="font-size:12px">${l.company_name||'—'}</td>
+      <td style="text-align:center;font-size:12px">${l.role==='admin'?'관리자':'일반'}</td>
+      <td style="text-align:center"><span class="bdg ${l.status==='success'?'b-ok':'b-danger'}">${l.status==='success'?'성공':'실패'}</span></td>
+      <td style="font-family:monospace;font-size:11px">${l.ip_address||'—'}</td>
+      <td style="font-size:11px;color:var(--gray)">${l.fail_reason||''}</td>
+    </tr>`).join('');
+}
+
 async function loadAdminUsers(){
   const token = localStorage.getItem('foodly_token') || '';
   const res = await fetch('/api/admin/users', {headers:{'X-Token':token}});

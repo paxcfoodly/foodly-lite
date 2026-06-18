@@ -44,7 +44,7 @@ from database import (
     ProductProcess, MaterialSupplier, ProductionPlan,
     SalesLog, SemiProductBOM, SemiProductProcess, StockAdjustment,
     Shipment, ReceiptNonconformance, InspectionStaff,
-    TenantUser, UserSession, hash_password, verify_password, ensure_admin,
+    TenantUser, UserSession, LoginLog, hash_password, verify_password, ensure_admin,
     SessionLocal,
 )
 
@@ -175,27 +175,48 @@ def _make_session(db, user_id: int, role: str) -> str:
     db.commit()
     return token
 
+def _record_login(db, *, username: str, company_name: str = None, user_id: int = None,
+                  role: str = None, status: str, fail_reason: str = None,
+                  ip: str = None, ua: str = None):
+    db.add(LoginLog(
+        username=username, company_name=company_name, user_id=user_id, role=role,
+        status=status, fail_reason=fail_reason, ip_address=ip, user_agent=ua,
+    ))
+    db.commit()
+
 @app.post("/api/auth/login")
-def user_login(data: LoginIn, db: Session = Depends(get_db)):
+def user_login(request: Request, data: LoginIn, db: Session = Depends(get_db)):
+    ip = request.headers.get("x-forwarded-for", request.client.host if request.client else None)
+    ua = request.headers.get("user-agent", "")
     user = db.query(TenantUser).filter(
         TenantUser.username == data.username,
         TenantUser.status == 'active',
         TenantUser.role == 'user',
     ).first()
     if not user or user.business_number != data.business_number or not verify_password(data.password, user.password_hash):
+        _record_login(db, username=data.username, status='fail',
+                      fail_reason='아이디/사업자번호/비밀번호 불일치', ip=ip, ua=ua)
         raise HTTPException(401, "아이디, 사업자등록번호 또는 비밀번호가 올바르지 않습니다")
+    _record_login(db, username=user.username, company_name=user.company_name,
+                  user_id=user.id, role='user', status='success', ip=ip, ua=ua)
     token = _make_session(db, user.id, 'user')
     return {"token": token, "role": "user", "company_name": user.company_name, "username": user.username, "business_number": user.business_number}
 
 @app.post("/api/auth/admin/login")
-def admin_login(data: AdminLoginIn, db: Session = Depends(get_db)):
+def admin_login(request: Request, data: AdminLoginIn, db: Session = Depends(get_db)):
+    ip = request.headers.get("x-forwarded-for", request.client.host if request.client else None)
+    ua = request.headers.get("user-agent", "")
     admin = db.query(TenantUser).filter(
         TenantUser.username == data.username,
         TenantUser.role == 'admin',
         TenantUser.status == 'active',
     ).first()
     if not admin or not verify_password(data.password, admin.password_hash):
+        _record_login(db, username=data.username, status='fail',
+                      fail_reason='관리자 아이디/비밀번호 불일치', ip=ip, ua=ua)
         raise HTTPException(401, "관리자 아이디 또는 비밀번호가 올바르지 않습니다")
+    _record_login(db, username=admin.username, company_name='PAXC 운영사',
+                  user_id=admin.id, role='admin', status='success', ip=ip, ua=ua)
     token = _make_session(db, admin.id, 'admin')
     return {"token": token, "role": "admin", "username": admin.username}
 
@@ -303,6 +324,35 @@ def admin_delete_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "User not found")
     db.delete(u); db.commit()
     return {"ok": True}
+
+@app.get("/api/admin/login-logs")
+def admin_login_logs(
+    limit: int = Query(100, ge=1, le=500),
+    username: Optional[str] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    require_admin()
+    q = db.query(LoginLog).order_by(desc(LoginLog.logged_at))
+    if username:
+        q = q.filter(LoginLog.username.ilike(f"%{username}%"))
+    if status:
+        q = q.filter(LoginLog.status == status)
+    logs = q.limit(limit).all()
+    return [
+        {
+            "id": l.id,
+            "username": l.username,
+            "company_name": l.company_name or "",
+            "role": l.role or "",
+            "status": l.status,
+            "fail_reason": l.fail_reason or "",
+            "ip_address": l.ip_address or "",
+            "user_agent": (l.user_agent or "")[:80],
+            "logged_at": l.logged_at.strftime("%Y-%m-%d %H:%M:%S") if l.logged_at else "",
+        }
+        for l in logs
+    ]
 
 
 # ─────────────────────────────────────────
