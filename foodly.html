@@ -547,11 +547,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
     <!-- 로그인 이력 탭 -->
     <div id="admin-panel-logs" style="display:none">
       <div class="card">
-        <div class="card-head">
+        <div class="card-head" style="flex-wrap:wrap;gap:8px">
           <div class="card-title">로그인 이력</div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input id="log-filter-username" class="finput" style="width:140px;height:32px;font-size:13px" placeholder="아이디 검색"/>
-            <select id="log-filter-status" class="finput" style="width:100px;height:32px;font-size:13px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input id="log-filter-from" class="finput" type="date" style="width:140px;height:32px;font-size:13px"/>
+            <span style="font-size:13px;color:var(--gray)">~</span>
+            <input id="log-filter-to" class="finput" type="date" style="width:140px;height:32px;font-size:13px"/>
+            <input id="log-filter-username" class="finput" style="width:120px;height:32px;font-size:13px" placeholder="아이디"/>
+            <select id="log-filter-status" class="finput" style="width:90px;height:32px;font-size:13px">
               <option value="">전체</option>
               <option value="success">성공</option>
               <option value="fail">실패</option>
@@ -2074,12 +2077,16 @@ function adminTab(tab) {
 }
 
 async function loadLoginLogs() {
-  const token = localStorage.getItem('foodly_token') || '';
+  const token    = localStorage.getItem('foodly_token') || '';
   const username = document.getElementById('log-filter-username')?.value || '';
   const status   = document.getElementById('log-filter-status')?.value   || '';
+  const dateFrom = document.getElementById('log-filter-from')?.value     || '';
+  const dateTo   = document.getElementById('log-filter-to')?.value       || '';
   const params = new URLSearchParams({limit: 200});
   if (username) params.set('username', username);
-  if (status)   params.set('status', status);
+  if (status)   params.set('status',   status);
+  if (dateFrom) params.set('date_from', dateFrom);
+  if (dateTo)   params.set('date_to',   dateTo);
   const res = await fetch('/api/admin/login-logs?' + params, {headers:{'X-Token':token}});
   const tbody = document.getElementById('admin-log-tbody');
   if (!res.ok) { tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--red)">권한 없음</td></tr>'; return; }

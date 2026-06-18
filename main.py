@@ -368,9 +368,11 @@ def admin_delete_user(user_id: int, db: Session = Depends(get_db)):
 
 @app.get("/api/admin/login-logs")
 def admin_login_logs(
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(200, ge=1, le=500),
     username: Optional[str] = None,
     status: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     require_admin()
@@ -379,6 +381,10 @@ def admin_login_logs(
         q = q.filter(LoginLog.username.ilike(f"%{username}%"))
     if status:
         q = q.filter(LoginLog.status == status)
+    if date_from:
+        q = q.filter(LoginLog.logged_at >= datetime.fromisoformat(date_from))
+    if date_to:
+        q = q.filter(LoginLog.logged_at < datetime.fromisoformat(date_to) + timedelta(days=1))
     logs = q.limit(limit).all()
     return [
         {
