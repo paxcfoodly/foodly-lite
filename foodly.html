@@ -1801,6 +1801,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 // ══════════════════════════════
 // ROUTING
 // ══════════════════════════════
+// goApp()가 자동 로그인 시 페이지 로드 중 즉시 호출될 수 있어, let으로 아래쪽에
+// 선언하면 그 시점엔 아직 초기화 전(TDZ)이라 ReferenceError가 나서 스크립트
+// 전체가 거기서 멈춰버린다 (이후 모든 let 선언이 초기화되지 않음). 그래서 최상단에 둔다.
+let _popstateNav = false;
 const allScreens = ['login','signup','onboard1','onboard2','onboard3','app','admin'];
 const allAppScreens = ['dashboard','receipt','receipt-upload','receipt-ocr','receipt-done','receipt-manual','stock','ledger','ingodaejang','production','plan','saengsan-ilji','recipe','device','mat-master','semi-master','prod-master','partner-master','process-master','shipment','sales-dashboard','sales-ledger','statement'];
 const navMap = {dashboard:'nav-dashboard',receipt:'nav-receipt','receipt-upload':'nav-receipt','receipt-ocr':'nav-receipt','receipt-done':'nav-receipt','receipt-manual':'nav-receipt',stock:'nav-stock',ledger:'nav-ledger',ingodaejang:'nav-ingodaejang',production:'nav-production',plan:'nav-plan','saengsan-ilji':'nav-saengsan-ilji',recipe:'nav-recipe',device:'nav-device','mat-master':'nav-mat-master','semi-master':'nav-semi-master','prod-master':'nav-prod-master','partner-master':'nav-partner-master','process-master':'nav-process-master',shipment:'nav-shipment','sales-dashboard':'nav-sales-dashboard','sales-ledger':'nav-sales-ledger',statement:'nav-statement'};
@@ -6682,7 +6686,6 @@ document.addEventListener('keydown', function(e) {
 });
 
 // 브라우저 뒤로가기(← 버튼) → 앱 내 이전 화면 복원
-let _popstateNav = false;
 window.addEventListener('popstate', function(e) {
   if (e.state && e.state.page) {
     _popstateNav = true;
