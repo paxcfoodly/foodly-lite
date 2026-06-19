@@ -454,6 +454,14 @@ class ReceiptCreate(BaseModel):
     inspector: Optional[str] = None
     confirmer: Optional[str] = None
 
+class ReceiptUpdate(BaseModel):
+    supplier_id: Optional[int] = None
+    lot_number: Optional[str] = None
+    quantity: Optional[float] = None
+    unit_price: Optional[float] = None
+    delivery_date: Optional[str] = None
+    expiry_date: Optional[str] = None
+
 class NonconformanceCreate(BaseModel):
     receipt_id: int
     date: Optional[str] = None
@@ -721,7 +729,10 @@ def list_receipts(
     for r in items:
         result.append({
             "id": r.id, "receipt_number": r.receipt_number,
+            "material_id": r.material_id,
             "material_name": r.material.name if r.material else "",
+            "material_current_stock": r.material.current_stock if r.material else 0,
+            "supplier_id": r.supplier_id,
             "supplier_name": r.supplier.name if r.supplier else "",
             "lot_number": r.lot_number, "quantity": r.quantity,
             "unit": r.material.unit if r.material else "",
@@ -946,6 +957,38 @@ def delete_inspection_staff(sid: int, db: Session = Depends(get_db)):
     if not s:
         raise HTTPException(404, "Not found")
     db.delete(s); db.commit()
+    return {"ok": True}
+
+
+@app.put("/api/receipts/{receipt_id}")
+def update_receipt(receipt_id: int, data: ReceiptUpdate, db: Session = Depends(get_db)):
+    r = db.query(Receipt).filter(Receipt.id == receipt_id, Receipt.user_id == uid()).first()
+    if not r:
+        raise HTTPException(404, "Not found")
+
+    if data.quantity is not None and data.quantity != r.quantity:
+        mat = db.query(Material).filter(Material.id == r.material_id, Material.user_id == uid()).first()
+        if not mat:
+            raise HTTPException(404, "Material not found")
+        # 이 입고분 중 이미 소진된 양(=재고 풀 전체가 부족해진 만큼) 이하로는 줄일 수 없음
+        already_used = max(0, r.quantity - mat.current_stock)
+        if data.quantity < already_used:
+            raise HTTPException(400, f"이미 {already_used:g}{mat.unit} 사용되어 최소 {already_used:g}{mat.unit} 이상으로만 수정할 수 있습니다")
+        mat.current_stock = max(0, mat.current_stock + (data.quantity - r.quantity))
+        r.quantity = data.quantity
+
+    if data.supplier_id is not None:
+        r.supplier_id = data.supplier_id
+    if data.lot_number:
+        r.lot_number = data.lot_number
+    if data.unit_price is not None:
+        r.unit_price = data.unit_price
+    if data.delivery_date:
+        r.delivery_date = datetime.fromisoformat(data.delivery_date)
+    if data.expiry_date:
+        r.expiry_date = datetime.fromisoformat(data.expiry_date)
+
+    db.commit()
     return {"ok": True}
 
 
