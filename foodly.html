@@ -300,13 +300,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   .nav.mob-open{transform:translateX(0);box-shadow:6px 0 28px rgba(0,0,0,.22)}
   /* 메인 영역 전체 너비 차지 */
   .app{overflow:hidden}
-  .main{width:100% !important;flex:none;display:flex;flex-direction:column;height:100svh;overflow:hidden}
+  /* .page-body의 flex:1/overflow-y:auto는 부모(#app-xxx)가 flex 컨테이너가 아니라 실제로
+     작동하지 않아 내용이 길면 화면 아래로 잘려서(스크롤 불가) 버튼이 안 보이는 문제가 있었음.
+     .mob-bar가 이미 position:sticky로 설계돼 있으므로, .main 전체를 스크롤시키는 게 맞다 */
+  .main{width:100% !important;flex:none;display:flex;flex-direction:column;height:100svh;overflow-y:auto}
   .mob-overlay{display:block}
   .mob-bar{display:flex}
   .page-head{padding:10px 16px;flex-wrap:wrap;gap:8px}
   .page-title{font-size:17px}
   .page-actions{flex-wrap:wrap}
-  .page-body{padding:12px 16px;gap:12px;flex:1;overflow-y:auto}
+  .page-body{padding:12px 16px;gap:12px}
   .grid2{grid-template-columns:1fr !important}
   .frow{grid-template-columns:1fr !important}
   .kgrid{grid-template-columns:1fr 1fr !important}
