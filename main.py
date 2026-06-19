@@ -376,15 +376,18 @@ def admin_login_logs(
     db: Session = Depends(get_db),
 ):
     require_admin()
+    KST_OFFSET = timedelta(hours=9)
     q = db.query(LoginLog).order_by(desc(LoginLog.logged_at))
     if username:
         q = q.filter(LoginLog.username.ilike(f"%{username}%"))
     if status:
         q = q.filter(LoginLog.status == status)
+    # logged_at은 UTC로 저장됨; date_from/date_to는 관리자가 입력한 KST 기준 날짜이므로
+    # 비교 전에 KST -> UTC로 변환해야 함
     if date_from:
-        q = q.filter(LoginLog.logged_at >= datetime.fromisoformat(date_from))
+        q = q.filter(LoginLog.logged_at >= datetime.fromisoformat(date_from) - KST_OFFSET)
     if date_to:
-        q = q.filter(LoginLog.logged_at < datetime.fromisoformat(date_to) + timedelta(days=1))
+        q = q.filter(LoginLog.logged_at < datetime.fromisoformat(date_to) + timedelta(days=1) - KST_OFFSET)
     logs = q.limit(limit).all()
     return [
         {
@@ -396,7 +399,7 @@ def admin_login_logs(
             "fail_reason": l.fail_reason or "",
             "ip_address": l.ip_address or "",
             "user_agent": (l.user_agent or "")[:80],
-            "logged_at": l.logged_at.strftime("%Y-%m-%d %H:%M:%S") if l.logged_at else "",
+            "logged_at": (l.logged_at + KST_OFFSET).strftime("%Y-%m-%d %H:%M:%S") if l.logged_at else "",
         }
         for l in logs
     ]
