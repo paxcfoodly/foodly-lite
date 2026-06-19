@@ -1708,7 +1708,7 @@ def _normalize(text: str) -> str:
 async def ocr_receipt(image: UploadFile = File(...), db: Session = Depends(get_db)):
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key or api_key == "여기에_API_키를_입력하세요":
-        raise HTTPException(500, "C:\\foodly\\.env 파일을 열어 ANTHROPIC_API_KEY에 실제 키를 입력한 뒤 서버를 재시작하세요.")
+        raise HTTPException(500, "서버에 ANTHROPIC_API_KEY가 설정되어 있지 않습니다. 로컬은 .env 파일에 키를 입력 후 재시작하고, Railway는 서비스 Variables 탭에 ANTHROPIC_API_KEY를 추가한 뒤 재배포하세요.")
 
     img_data = await image.read()
     img_b64 = base64.standard_b64encode(img_data).decode("utf-8")

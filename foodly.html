@@ -3552,22 +3552,41 @@ function addProductionButton() {
 let _ocrResult   = null;
 let _ocrPartners = [];
 let _ocrMaterials= [];
+let _ocrImageBlob = null;
+
+const OCR_MAX_DIM = 1600;
 
 function handleOCRFileSelect(input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('ocr-preview-img').src = e.target.result;
-    document.getElementById('ocr-drop-area').style.display = 'none';
-    document.getElementById('ocr-preview-wrap').style.display = 'block';
+  // 휴대폰 카메라 원본(수 MB~수십 MB)을 base64로 그대로 읽으면 일부 모바일 브라우저에서
+  // 멈추거나 조용히 실패하므로, object URL + canvas로 축소한 뒤 그 결과만 사용한다
+  const objectUrl = URL.createObjectURL(file);
+  const img = new Image();
+  img.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    alert('이미지를 불러오지 못했습니다. 다른 사진으로 다시 시도해주세요.');
   };
-  reader.readAsDataURL(file);
+  img.onload = () => {
+    const scale = Math.min(1, OCR_MAX_DIM / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(objectUrl);
+    canvas.toBlob(blob => {
+      if (!blob) { alert('이미지 처리에 실패했습니다. 다른 사진으로 다시 시도해주세요.'); return; }
+      _ocrImageBlob = blob;
+      document.getElementById('ocr-preview-img').src = URL.createObjectURL(blob);
+      document.getElementById('ocr-drop-area').style.display = 'none';
+      document.getElementById('ocr-preview-wrap').style.display = 'block';
+    }, 'image/jpeg', 0.85);
+  };
+  img.src = objectUrl;
 }
 
 async function analyzeOCRReceipt() {
-  const fileInput = document.getElementById('ocr-file-input');
-  if (!fileInput?.files[0]) return;
+  if (!_ocrImageBlob) return;
 
   const btn = document.getElementById('ocr-analyze-btn');
   const previewWrap = document.getElementById('ocr-preview-wrap');
@@ -3577,7 +3596,7 @@ async function analyzeOCRReceipt() {
   loading.style.display = 'block';
 
   const formData = new FormData();
-  formData.append('image', fileInput.files[0]);
+  formData.append('image', _ocrImageBlob, 'receipt.jpg');
 
   try {
     const [ocrRes, partners, materials] = await Promise.all([
@@ -3766,6 +3785,7 @@ window.goApp = function(page) {
     const fi = document.getElementById('ocr-file-input');
     if (fi) fi.value = '';
     _ocrResult = null;
+    _ocrImageBlob = null;
   }
   else if (page === 'mat-master')   loadMaterMaster();
   else if (page === 'semi-master')  loadSemiMaster();
