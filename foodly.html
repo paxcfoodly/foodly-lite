@@ -3553,6 +3553,7 @@ let _ocrResult   = null;
 let _ocrPartners = [];
 let _ocrMaterials= [];
 let _ocrImageBlob = null;
+let _ocrPreviewUrl = null;
 
 const OCR_MAX_DIM = 1600;
 
@@ -3573,45 +3574,48 @@ function processOCRFile(file) {
   if (!file) return;
 
   const showPreview = (blobOrFile) => {
+    // 이전 미리보기 blob URL을 안 해제하면 같은 탭에서 여러 번 시도할 때마다
+    // 메모리에 계속 쌓여 결국 디코딩/처리가 실패하는 원인이 될 수 있어 매번 해제한다
+    if (_ocrPreviewUrl) URL.revokeObjectURL(_ocrPreviewUrl);
     _ocrImageBlob = blobOrFile;
-    document.getElementById('ocr-preview-img').src = URL.createObjectURL(blobOrFile);
+    _ocrPreviewUrl = URL.createObjectURL(blobOrFile);
+    document.getElementById('ocr-preview-img').src = _ocrPreviewUrl;
     document.getElementById('ocr-drop-area').style.display = 'none';
     document.getElementById('ocr-preview-wrap').style.display = 'block';
   };
 
   // 휴대폰 카메라 원본(수 MB~수십 MB)을 base64로 그대로 읽으면 일부 모바일 브라우저에서
-  // 멈추거나 조용히 실패하므로, object URL + canvas로 축소한 뒤 그 결과만 사용한다.
-  // 카카오톡 등으로 전달된 일부 비표준 JPG는 onload/onerror가 둘 다 발생하지 않고
-  // 디코딩이 멈추는 경우가 있어, 타임아웃 시 원본 파일을 그대로 사용해 진행시킨다.
-  const objectUrl = URL.createObjectURL(file);
-  const img = new Image();
+  // 멈추거나 조용히 실패하므로, createImageBitmap + canvas로 축소한 뒤 그 결과만 사용한다.
+  // <img>+canvas 방식은 EXIF 방향(orientation) 태그를 무시해 사진이 옆으로 눕는 문제가 있어
+  // imageOrientation:'from-image'로 방향을 보정하는 createImageBitmap을 사용한다.
+  // 카카오톡 등으로 전달된 일부 비표준 JPG는 디코딩이 끝나지도 실패하지도 않고 멈추는
+  // 경우가 있어, 타임아웃 시 원본 파일을 그대로 사용해 진행시킨다.
   let settled = false;
   const fallbackTimer = setTimeout(() => {
     if (settled) return;
     settled = true;
-    URL.revokeObjectURL(objectUrl);
     showPreview(file);
   }, 6000);
-  img.onerror = () => {
+  const decode = window.createImageBitmap
+    ? createImageBitmap(file, { imageOrientation: 'from-image' })
+    : Promise.reject(new Error('createImageBitmap unsupported'));
+  decode.then(bitmap => {
     if (settled) return;
     settled = true;
     clearTimeout(fallbackTimer);
-    URL.revokeObjectURL(objectUrl);
-    showPreview(file);
-  };
-  img.onload = () => {
-    if (settled) return;
-    settled = true;
-    clearTimeout(fallbackTimer);
-    const scale = Math.min(1, OCR_MAX_DIM / Math.max(img.width, img.height));
-    const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+    const scale = Math.min(1, OCR_MAX_DIM / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale), h = Math.round(bitmap.height * scale);
     const canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
-    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-    URL.revokeObjectURL(objectUrl);
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+    bitmap.close();
     canvas.toBlob(blob => showPreview(blob || file), 'image/jpeg', 0.85);
-  };
-  img.src = objectUrl;
+  }).catch(() => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(fallbackTimer);
+    showPreview(file);
+  });
 }
 
 async function analyzeOCRReceipt() {
@@ -3815,6 +3819,7 @@ window.goApp = function(page) {
     if (fi) fi.value = '';
     _ocrResult = null;
     _ocrImageBlob = null;
+    if (_ocrPreviewUrl) { URL.revokeObjectURL(_ocrPreviewUrl); _ocrPreviewUrl = null; }
   }
   else if (page === 'mat-master')   loadMaterMaster();
   else if (page === 'semi-master')  loadSemiMaster();
